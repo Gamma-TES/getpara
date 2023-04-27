@@ -1,0 +1,434 @@
+
+
+#解析用のプログラム
+
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+import scipy.fftpack as fft
+from scipy.optimize import curve_fit
+import shutil
+import os
+import re
+import json
+
+
+
+
+#---解析プログラム作成------------------------------------------------------------
+
+# ファイル読み込み(バイナリ)
+def loadbi(path):
+    with open (path,'rb') as fb:
+        fb.seek(4)
+        data = np.frombuffer(fb.read(),dtype='float64')
+        return data
+
+# ファイル読み込み（テキスト）
+def loadtxt(path):
+    with open(path,'r') as f:
+        data = np.loadtxt(f,comments='#',skiprows=6)
+    return data
+
+# Setting.txtを読み込み
+def setting(path):
+    with open(path) as f:
+        setting = np.loadtxt(f,skiprows=9)
+
+    rate = int(setting[3])
+    samples = int(setting[5])
+    presamples = int(setting[6])
+    thereshould = int(setting[7])
+    return rate,samples,presamples,thereshould
+
+# Json形式へ変更
+def setting_json(path,ch):
+    setting = np.loadtxt("Setting.txt",skiprows = 10)
+    setting_json = {
+        "path" : path,
+        "channel":ch,
+        "rate" : int(setting[2]),
+        "samples" : int(setting[4]),
+        "presamples" : int(setting[5]),
+        "threshold" : setting[6],
+    }
+    set = json.dumps(setting_json,indent=4)
+
+    with open("C:/Users/gamma/Desktop/matsumi/scripts/setting.json", 'w') as file:
+        file.write(set)
+
+    return set
+
+def loadJson():
+    with open("setting.json") as f:
+        jsn = json.load(f)
+    return jsn
+
+
+def data_time(rate,samples):
+    return  np.arange(0,1/rate*samples,1/rate)
+
+#サンプル数のチェック
+def check_samples(data,samples):
+    if len(data) == samples:
+        return "OK"
+    else:
+        return "NO"
+
+
+#ベースラインを作成
+def baseline(data,presamples,x,w):
+    base = np.mean(data[presamples-x:presamples-x+w])
+    data_ba = data-base
+    return base,data_ba
+
+
+#ピークの検出
+def peak(data,presamples,w_max,x_av,w_av):
+    peak = np.max(data[presamples:presamples+w_max])
+    peak_index = np.argmax(data[presamples:presamples+w_max]) + presamples
+    peak_av = np.mean(data[peak_index-x_av:peak_index-x_av+w_av])
+    return peak,peak_av,peak_index
+
+
+#積分
+def integrate(data):
+    return np.sum(data)
+
+
+#ライズタイム
+def risetime(data,peak,peak_index,rate):
+    
+    rise_90 = 0
+    rise_10 = 0
+    
+    for i in reversed(range(0,peak_index)):
+        if data[i] <= peak*0.9:
+            rise_90 = i
+            break
+
+    for j in reversed(range(0,rise_90)):
+        if data[j] <= peak*0.1:
+            rise_10 = j
+            break
+    
+
+    #rise_90 = np.argmax(data[peak_index-500:peak_index]>=peak*0.9)+peak_index-500
+    #rise_10 = np.argmax(data[peak_index-500:peak_index]>=peak*0.1)+peak_index-500
+    rise = (rise_90-rise_10)/rate
+    return rise,rise_10,rise_90
+
+
+#ディケイタイム
+def decaytime(data,peak,peak_index,rate):
+    
+    decay_90 = 0
+    decay_10 = 0
+    for i in range(peak_index,len(data)):
+        if data[i] <= peak*0.9:
+            decay_90 = i
+            break
+    for j in range(decay_90,len(data)):
+        if data[j] <= peak*0.1:
+            decay_10 = j
+            break
+    
+    #decay_90 = np.argmax(data[peak_index:]<=peak*0.9)
+    #decay_10 = np.argmax(data[peak_index:]<=peak*0.1)
+    decay = (decay_10-decay_90)/rate
+    return decay
+
+
+#シリコンイベント弁別
+def silicon_event(decay_ab,decay_sil):
+    if decay_ab < decay_sil:
+        return "silicon"
+    else:
+        return "absorb"
+
+
+#ダブルパルス除去（仮）
+def double_event(data,peak_index,rise_width,threshold):
+    for i in range(peak_index,int(len(data))-rise_width):
+        if data[i+rise_width]-data[i] >= threshold:
+            return "double"
+        else:
+            return "single"
+
+
+#移動平均
+def moving_average(x,w):
+    return np.convolve(x,np.ones(w),'valid') /w
+
+
+#微分
+def diff(data):
+    return np.gradient(data)
+
+
+#フィルター処理
+def filter(data,rate,samples):
+    fq = np.arange(0,rate,rate/samples)
+    f = np.fft.fft(data)
+    F =np.abs(f)
+    #graugh_fft('fft',F[:int(samples/2)+1],fq[:int(samples/2)+1])
+    graugh_fft('fft',F,fq)
+    filter =np.linspace(1,1,int(samples))
+    cutoff_l= input('Enter low cutoff freqency(Hz)')
+    cutoff_h= input('Enter hight cutoff freqency(Hz)')
+    f2 = np.copy(f)
+    for i in range(len(fq)):
+        index_1 = 0
+        if fq[i] >= int(cutoff_l):
+            index_1 = i
+            break
+    for j in range(index_1,len(fq)):
+        index_2 = 0
+        if fq[j] >= int(cutoff_h):
+            index_2 = j
+            break
+    filter[index_1:index_2] = 0
+    f2 = f2*filter
+    F2 =np.abs(f2)
+    ifft = np.fft.ifft(f2)
+    #graugh_fft('fft',F2[:int(samples/2)+1],fq[:int(samples/2)+1])
+    graugh_fft('fft',F2,fq)
+    return ifft.real 
+
+
+#フィッティング
+def monoExp(x,m,t):
+    return m*np.exp(-t*x)
+
+def doubleExp(x,m1,t1,m2,t2):
+    return m1*np.exp(-t1*x) + m2*np.exp(-t2*x)
+
+def fitting(data,peak_index,time,x,w,mode):
+    start = peak_index+x
+    x = time[start:start+w]
+    y = data[start:start+w]
+    p0 = [14,70]
+    try :
+        params,cov = curve_fit(monoExp,x,y,p0=p0,maxfev=5000)
+        m = params[0]
+        t = params[1]
+        tauSec = 1/t
+        squaredDiffs = np.square(y - monoExp(x, m, t))
+        squaredDiffsFromMean = np.square(y - np.mean(y))
+        rSquared = 1 - np.sum(squaredDiffs) / np.sum(squaredDiffsFromMean)
+        max_div = np.sqrt(np.max(squaredDiffs))
+        max_index = np.argmax(squaredDiffs)+peak_index
+        if mode == '1':
+            plt.plot(x, monoExp(x, m, t), '--',label="fitted",c="blue")
+            
+    except RuntimeError:
+        print('Error')
+        m , t, tauSec, rSquared ,max_div,max_index = 0,0,0,0,0,0
+        
+
+    return m , t, tauSec, rSquared ,max_div,max_index
+
+#フィッティング(二次指数関数)
+def fitting_double(data,peak_index,time,x,w,mode):
+    start = peak_index+x
+    x = time[start:start+w]
+    y = data[start:start+w]
+    p0 = [1,1,1]
+
+    params,cov = curve_fit(doubleExp,x,y,p0=p0,maxfev=100000)
+    m1,t1,m2,t2 = params[0],params[1],params[2],params[3]
+    #tauSec = 1/t
+    #squaredDiffs = np.square(y - monoExp(x, m, t))
+    #squaredDiffsFromMean = np.square(y - np.mean(y))
+    #rSquared = 1 - np.sum(squaredDiffs) / np.sum(squaredDiffsFromMean)
+    #max_div = np.sqrt(np.max(squaredDiffs))
+    #max_index = np.argmax(squaredDiffs)+peak_index
+    if mode == '1':
+        plt.plot(x, doubleExp(x, m1,t1,m2, t2), '--',label="fitted",c="orange")
+        
+    #except RuntimeError:
+    #    print('fitting error')
+    #    m , t, tauSec, rSquared ,max_div,max_index = 0,0,0,0,0,0
+    tauSec, rSquared ,max_div,max_index = 0,0,0,0
+
+    return m1,t1,m2,t2, tauSec, rSquared ,max_div,max_index
+
+
+def siliconEvent(data,peak_index,rate):
+    cnt = 0
+    for i in data[peak_index:]:
+        cnt += 1
+        if data[peak_index] * rate > i:
+            break
+        
+    return cnt
+
+    
+def search_peak(hist):
+    
+    mv = moving_average(hist,5)
+    plt.plot(hist)
+    plt.plot(mv)
+    diff = moving_average(np.gradient(mv),5) 
+    diff2 = np.gradient(diff)
+    plt.plot(diff)
+    
+    #plt.show()
+    min= int(input("range min: "))
+    threshold = 0.5
+    print("\n")
+
+    trigger = False
+    trigger2 = False 
+    peak_list = []
+    for i in reversed(np.arange(min,len(hist)-10,1)):
+        if trigger == False and diff[i] < threshold * -1:
+            print(i)
+            trigger = True
+        if trigger == True and diff[i] > 0:
+            if trigger2 == False:
+                print(i)
+                peak = []
+                peak.append(np.max(hist[i:i+10]))
+                peak.append(np.argmax(hist[i:i+10])+i)
+                trigger2 = True
+            if trigger2 == True and diff2[i] > 0:
+                peak.append((peak[1]-(i-1)))
+                peak_list.append(peak)
+                trigger = False
+                trigger2 = False
+
+    return peak_list
+
+
+# ----------グラフからデータを抽出---------------------------------
+def pickSamples(x_ax,y_ax,df):
+    x,y = extruct(df,x_ax,y_ax)
+    coo = ginput(x,y,x_ax,y_ax)
+
+    x_picked = []
+    y_picked = []
+    inside = np.ndarray(len(x), dtype=bool)
+    inside[:] = False
+    for i, (sx, sy) in enumerate(zip(x,y)):
+        inside[i] = inpolygon(sx, sy, coo[:,0], coo[:,1])
+        if inside[i]==True:
+            x_picked.append(x[i])
+            y_picked.append(y[i])
+        else:
+            pass
+    PlotSelected(x,y,inside,x_picked,y_picked)
+    return df[inside].index.values
+
+def extruct(df,*x):
+    ext = []
+    for i in x:
+        ext.append(df.loc[:,i].values)
+    return ext
+
+def ginput(x,y,x_ax,y_ax):
+	plt.plot(x,y,'bo',markersize=1)
+	plt.ylim(0,2)
+	plt.xlabel(x_ax)
+	plt.ylabel(y_ax)
+	plt.grid()
+	picked = plt.ginput(n=-1,timeout=-1)
+	plt.show()
+	plt.cla()
+
+	return np.array(picked)
+
+def inpolygon(sx,sy,x,y):
+	inside = False
+	for i1 in range(len(x)):
+		i2 = (i1+1)%len(x)
+		if min(x[i1],x[i2]) < sx < max(x[i1],x[i2]):
+			if (y[i1] + (y[i2]-y[i1])/(x[i2]-x[i1])*(sx-x[i1]) - sy) > 0:
+				inside = not inside
+	return inside
+
+def PlotSelected(x,y,inside,x_picked,y_picked):
+	plt.plot(x[inside==True],y[inside==True], 'gs',markersize=2)
+	plt.plot(x[inside==False],y[inside==False], 'ko',markersize=1,alpha = 0.4)
+	plt.ylim(0,2)
+
+	plt.grid()
+	plt.show()
+	plt.cla()
+#--------------------------------------------------------------
+
+#平均パルスを作成
+def average_pulse(index,presamples):
+    array = []
+    for i in index:
+        data = loadbi(i)
+        base,data = baseline(data,presamples,1000,500)
+        array.append(data)
+    av = np.mean(array,axis=0)
+    return av
+
+
+#パルスグラフ表示
+def graugh(path,data,time):
+    x = time
+    y = data
+    title = os.path.basename(path)
+    plt.plot(x,y,label="data")
+    plt.xlabel("time(s)")
+    plt.ylabel("volt(V)")
+    plt.title(title.replace('.dat',''))
+    #plt.legend()
+    #plt.show()
+    #plt.cla()
+
+
+#パルスグラフ保存
+def graugh_save(path,data,time):
+    x = time
+    y = data
+    title = os.path.basename(path)
+    plt.plot(x,y,label="data")
+    plt.xlabel("time")
+    plt.ylabel("volt")
+    plt.title(title.replace('.dat',''))
+    plt.legend()
+    plt.savefig(path.replace('rawdata','output').replace('.dat',''))
+    plt.cla()
+
+#パラメータグラフ表示
+def graugh_para(x,y,x_ax,y_ax,color):
+    plt.scatter(x,y,color=color,s=2)
+    plt.xlabel(x_ax)
+    plt.ylabel(y_ax)
+    plt.title(f"{x_ax} vs {y_ax}")
+    plt.grid()
+    #plt.show()
+    #plt.cla()
+
+#周波数グラフ表示
+def graugh_fft(path,data,time):
+    print("Click cutoff frequency.")
+    x = time
+    y = data
+    title = os.path.basename(path)
+    plt.plot(x,y,label="data")
+    plt.xlabel("FQ(Hz)")
+    plt.ylabel("AMP")
+    plt.xscale('log')
+    plt.yscale('log')
+    plt.title(title.replace('.dat',''))
+    #a = plt.ginput(n=2,mouse_add=1,mouse_pop=3,mouse_stop=2)
+    plt.show()
+    
+
+#outputフォルダの作成
+def output(path,df):
+    if not os.path.exists(path):
+        os.mkdir(path)
+        df.to_csv(os.path.join(path,"output.csv"))
+    else:
+        replace = input('Replace output folder? (Yes -> [0], No (not save) -> [1])')
+        if replace =='0':
+            shutil.rmtree(path)
+            os.mkdir(path)
+            df.to_csv(os.path.join(path,"output.csv"))
