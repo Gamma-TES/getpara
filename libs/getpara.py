@@ -64,6 +64,17 @@ def loadJson():
         jsn = json.load(f)
     return jsn
 
+def loadIndex(path):
+    index = []
+    with open (path,'r') as f:
+        for row in f.read().splitlines():
+            index.append(row)
+    return index
+
+
+
+
+
 
 def data_time(rate,samples):
     return  np.arange(0,1/rate*samples,1/rate)

@@ -34,9 +34,6 @@ import libs.getpara as gp
 import libs.fft_spectrum as sp
 import json
 
-#パスを入力
-path = 'H:/Matsumi/data/20230418/room2-2_140mK_870uA_gain10_trig0.1_10kHz'
-ch = '0'
 
 #-----②解析パラメータ------------------------------------------------
 x_ba = 1000     #baseを取るときのスタート点: presamples - x_ba
@@ -54,16 +51,14 @@ decay_sillicon = 0.001 #シリコンイベント判別の為のディケイ
 
 #実行
 if __name__ == '__main__':
-    if ch == '00':
-        ch = '0'
 
-    os.chdir(path) 
     # Settingを取得
-    set_json = gp.setting_json(path,ch)
-    set = json.loads(set_json)
-    print(set_json)
-    ch,rate,samples,presamples,threshold = set["channel"],set['rate'],set['samples'],set["presamples"],set["threshold"]
+    set = gp.loadJson()
+    path = set["Config"]["path"]
+    ch,rate,samples,presamples,threshold = \
+        set["Config"]["channel"],set["Config"]['rate'],set["Config"]['samples'],set["Config"]["presamples"],set["Config"]["threshold"]
     time = np.arange(0,1/rate*samples,1/rate)
+    os.chdir(path) 
 
 
     #パルス解析モード
@@ -102,7 +97,7 @@ if __name__ == '__main__':
         #1つのパルスを解析
     elif mode == '1':
         num = input('Enter pulse number: ')
-        path = os.path.join('CH'+ch+'_noize'+'/rawdata/CH'+ch+'_'+str(num)+'.dat')
+        path = os.path.join('CH'+ch+'_pulse'+'/rawdata/CH'+ch+'_'+str(num)+'.dat')
         data = gp.loadbi(path)
         plt.plot(data)
         plt.show()

@@ -25,7 +25,7 @@ def setting_json(path,ch):
     }
     set = json.dumps(setting_json,indent=4)
     print("Hello")
-    with open("C:/Users/gamma/matsumi/scripts/setting2.json", 'w') as file:
+    with open("C:/Users/gamma/matsumi/scripts/setting.json", 'w') as file:
         file.write(set)
 
     return set
