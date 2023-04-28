@@ -13,7 +13,7 @@ import json
 
 #-----------パラメタの設定----------------------
 
-
+print('hello')
 # set offset to zero
 def offset(data):
     if data[0] > 0:
