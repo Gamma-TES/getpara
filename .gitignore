@@ -1,3 +1,5 @@
 /__pycache__
+.gitignore
+/libs/__pycache__
 setting.json
 setting2.json
