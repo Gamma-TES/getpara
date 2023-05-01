@@ -313,9 +313,10 @@ def search_peak(hist):
 
 
 # ----------グラフからデータを抽出---------------------------------
-def pickSamples(x_ax,y_ax,df):
-    x,y = extruct(df,x_ax,y_ax)
-    coo = ginput(x,y,x_ax,y_ax)
+def pickSamples(df,*ax):
+
+    x,y = extruct(df,*ax)
+    coo = ginput(x,y,*ax)
 
     x_picked = []
     y_picked = []
@@ -438,7 +439,7 @@ def output(path,df):
         os.mkdir(path)
         df.to_csv(os.path.join(path,"output.csv"))
     else:
-        replace = input('Replace output folder? (Yes -> [0], No (not save) -> [1]): ')
+        replace = input('Replace output folder? (Yes -> [0], No (not save) -> [1])')
         if replace =='0':
             shutil.rmtree(path)
             os.makedirs(path)

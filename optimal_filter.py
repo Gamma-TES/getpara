@@ -20,18 +20,17 @@ def lowpass(F,fq,cf):
     F[(fq>cf)] = 0
     return F
 
-
-
-if __name__ == "__main__":
-
+def main():
     #read setting
     set = gp.loadJson()
-    ch,rate,samples,presamples,threshold = set["channel"],set["rate"],set["samples"],set["presamples"],set["threshold"]
+    path = set["Config"]["path"]
+    print(path)
+    os.chdir(path)
+    ch,rate,samples,presamples,threshold = set["Config"]["channel"],set["Config"]["rate"],set["Config"]["samples"],set["Config"]["presamples"],set["Config"]["threshold"]
     time = gp.data_time(rate,samples)
     fq = np.arange(0,rate,rate/samples)
     path_output = (f'CH{ch}_pulse/output')
     
-    os.chdir(set["path"])
     pulse_av = np.loadtxt(f"CH{ch}_pulse/output/average_pulse.txt")
     noise_spe = np.loadtxt(f"CH{ch}_noize/output/modelnoise.txt")
 
@@ -71,7 +70,12 @@ if __name__ == "__main__":
     
     np.savetxt(os.path.join(path_output,'pulseheight_opt.txt'),pulsehight_array)
     df["height_opt"] = pulsehight_array
+    df.to_csv(os.path.join(path_output,"output.csv"))
 
+
+
+
+if __name__ == "__main__":
+    main()
 
     
-    df.to_csv(os.path.join(path_output,"output.csv"))
