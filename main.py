@@ -40,7 +40,7 @@ x_ba = 1000     #baseを取るときのスタート点: presamples - x_ba
 w_ba = 500      #baseを取る幅: presamples - x_ba + w_ba
 w_max = 500     #peakを探す幅: presamples + w_max
 x_av = 10       #peak_avを探す時のスタート点: peak_index - x_av
-w_av = 20       #peak_avを探す幅: peak_index - x_av + w_av
+w_av = 30       #peak_avを探す幅: peak_index - x_av + w_av
 x_fit = 5       #fittingのスタート点: peak_index(average) + x_fit
 w_fit = 800     #fittingの幅: peak_index(average) + x_fit + w_fit
 mv_av = 100     #移動平均の幅
@@ -63,9 +63,11 @@ if __name__ == '__main__':
 
     #パルス解析モード
     path = natsorted(glob.glob(f'CH{ch}_pulse/rawdata/CH{ch}_*.dat'))
+    #path = natsorted(glob.glob(f'test/rawdata/CH{ch}_*.dat'))
     mode = input('Analysis Mode (all -> [0], one -> [1]): ')
     #全てのパルスを解析
     if mode == '0':
+        fit = int(input('fitting? (no -> [0], yes -> [1]): '))
         data_array = []
         for num in path:
             print(os.path.basename(num))
@@ -77,19 +79,29 @@ if __name__ == '__main__':
             peak_mv,peak_mv_av,peak_mv_index = gp.peak(mv,presamples,w_max,x_av,w_av)
             rise,rise_10,rise_90 = gp.risetime(data,peak_mv,peak_mv_index,rate)
             decay = gp.decaytime(data,peak_mv,peak_mv_index,rate)
-            m,t,tauSec,rSquared,max_div,max_index = gp.fitting(data,peak_index,time,x_fit,w_fit,mode)
 
+            if fit:
+                m,t,tauSec,rSquared,max_div,max_index = gp.fitting(data,peak_index,time,x_fit,w_fit,mode)
+                data_column = [samples,base,peak_av,peak_mv_av,rise,decay,tauSec,max_div,rSquared]
+            else:
+                data_column = [samples,base,peak_av,peak_mv_av,rise,decay]
             # シリコンイベントはピークの平均値をとらない
             if decay < decay_sillicon:
                 peak_av = peak
                 peak_mv_av = peak
-
-            data_column = [samples,base,peak_av,peak_mv_av,rise,decay,tauSec,max_div,rSquared]
             data_array.append(data_column)
             #DataFrameの作成
-        df = pd.DataFrame(data_array,\
-        columns=["samples","base","height","height_mv","rise","decay","tauSec","max_div","rSquared"],\
-        index=path)
+
+        if fit:
+            df = pd.DataFrame(data_array,\
+            columns=["samples","base","height","height_mv","rise","decay","tauSec","max_div","rSquared"],\
+            index=path)
+            print('fitting')
+        else:
+            df = pd.DataFrame(data_array,\
+            columns=["samples","base","height","height_mv","rise","decay"],\
+            index=path)
+
         output_path = (f'CH{ch}_pulse/output')
         gp.output(output_path,df)
         print('end')    
@@ -99,8 +111,6 @@ if __name__ == '__main__':
         num = input('Enter pulse number: ')
         path = os.path.join('CH'+ch+'_pulse'+'/rawdata/CH'+ch+'_'+str(num)+'.dat')
         data = gp.loadbi(path)
-        plt.plot(data)
-        plt.show()
         base,data = gp.baseline(data,presamples,x_ba,w_ba)
         mv = gp.moving_average(data,mv_av)
         dif  = gp.diff(mv)

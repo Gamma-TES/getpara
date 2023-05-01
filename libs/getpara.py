@@ -438,8 +438,8 @@ def output(path,df):
         os.mkdir(path)
         df.to_csv(os.path.join(path,"output.csv"))
     else:
-        replace = input('Replace output folder? (Yes -> [0], No (not save) -> [1])')
+        replace = input('Replace output folder? (Yes -> [0], No (not save) -> [1]): ')
         if replace =='0':
             shutil.rmtree(path)
-            os.mkdir(path)
+            os.makedirs(path)
             df.to_csv(os.path.join(path,"output.csv"))
