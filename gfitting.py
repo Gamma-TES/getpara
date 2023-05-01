@@ -22,7 +22,7 @@ import pandas as pd
 x_ax = "height_opt_temp"
 
 set = gp.loadJson()
-ch,path = set["channel"],set["path"]
+ch,path = set["Config"]["channel"],set["Config"]["path"]
 os.chdir(path)
 df = pd.read_csv((f'CH{ch}_pulse/output/output.csv'),index_col=0)
 pulseheight = np.array(gp.extruct(df,x_ax))[0]

@@ -12,8 +12,8 @@ import sys
 import json
 
 #-----------パラメタの設定----------------------
+R_SH = 3.9e-3
 
-print('hello')
 # set offset to zero
 def offset(data):
     if data[0] > 0:
@@ -98,6 +98,7 @@ def main():
         else:
             exit()
         
+
         plt.plot(I_bias,V_out,marker = "o",c = "red",linewidth = 1,markersize = 6)
         plt.plot(x_fit,func(x_fit,*popt))
         plt.plot(x_fit,y_fit)
@@ -108,7 +109,14 @@ def main():
         plt.show()
         
         calib =  input('continue? yes[0],no[1]:')
+
+    I_tes = eta * V_out
+    I_sh = I_bias - I_tes
+    V_tes = I_sh * R_SH
+    R_tes = V_tes[1:] / I_tes[1:]
+    R_tes =  np.append(0.0,R_tes)
     
+
     IV = [I_bias,V_out]
     np.savetxt(f"output/IV_{temp}_calibration.txt",IV)
 
@@ -119,6 +127,15 @@ def main():
     plt.grid(True)
     plt.savefig(f"output/IV_{temp}_calibration.png")
     plt.show()
+
+    # I-R graugh
+    plt.plot(I_bias,R_tes,marker = "o",c = "red",linewidth = 1,markersize = 6)
+    plt.title(f'I-R at {temp}')
+    plt.xlabel("I_bias[uA]",fontsize = 16)
+    plt.ylabel("R_tes[$\Omega$]",fontsize = 16)
+    plt.grid(True)
+    plt.savefig(f"output/IR_{temp}.png")
+    plt.cla()
 
 
 if __name__ == '__main__':

@@ -13,17 +13,9 @@ import shutil
 import libs.getpara as gp
 import pandas as pd
 
-# ---Parameter--------------------------------------------------
-
-
-
-#------------------------------------------------
-
-    
-
 
 #実行
-if __name__ == "__main__":
+def main():
     set = gp.loadJson()
     os.chdir(set["Config"]["path"])
     ch = set['Config']['channel']
@@ -65,6 +57,9 @@ if __name__ == "__main__":
     plt.xlabel('Frequency[kHz]')
     plt.ylabel('Intensity[pA/kHz$^{1/2}$]')
     plt.grid()
-    plt.savefig(f'CH{ch}_noize/{output}/modelnoise.png')
+    plt.savefig(f'CH{ch}_noize/output/modelnoise.png')
     plt.show()
+
+if __name__ == "__main__":
+    main()
 

@@ -81,14 +81,14 @@ def SelectBase(minBase,maxBase,x,y):
 def main():
 	
 	set = gp.loadJson()
-	ch,path = set["channel"],set["path"]
+	ch,path = set["Config"]["channel"],set["Config"]["path"]
 	os.chdir(path) 
 	df = pd.read_csv((f'CH{ch}_pulse/output/output.csv'),index_col=0)
 	#df = df[(df['base']<0.1)&(df['rise']>4e-05)]
 	#Pick Samples
-	picked = gp.pickSamples("base","pulse_height_opt",df) 
+	picked = gp.pickSamples(df,"base","height_opt") 
 	baseline = df.loc[picked,"base"]
-	pulseheight = df.loc[picked,"pulse_height_opt"]
+	pulseheight = df.loc[picked,"height_opt"]
 	print(f"Selected {len(picked)} Samples.")
 	
 	#Fitting
@@ -101,7 +101,7 @@ def main():
 	st = np.mean(pulseheight)
 	pulseheight_cal = np.zeros(len(df))
 	i = 0
-	for base,height in zip(df["base"],df["pulse_height_opt"]):
+	for base,height in zip(df["base"],df["height_opt"]):
 		if base > cal_range[0] and base < cal_range[1]:
 			pulseheight_cal[i] = height/Calibration(base,popt)
 		else:

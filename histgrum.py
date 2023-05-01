@@ -68,7 +68,7 @@ def main():
 
     # Load Setting 
     set = gp.loadJson()
-    path,ch = set["path"],set["channel"]
+    path,ch = set["Config"]["path"],set["Config"]["channel"]
     os.chdir(path)
 
     # Load data and transform histgrum

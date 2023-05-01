@@ -8,11 +8,12 @@ import libs.getpara as gp
 import glob
 from natsort import natsorted
 import os
+import sys
+import shutil
 import json
+import re
 
-#-----------パラメタの設定----------------------
-path = "E:/matsumi/data/20230428_3/room2-ch2"
-ch = 1 			# channel number
+
 R_SH = 3.9e-3	# shant resistance
 
 # set offset to zero
@@ -30,45 +31,20 @@ def offset(data):
 def func(x,a,b):
     return a * x + b
 
-def calibration(x,data,a,b):
-    calib = '0'
-    while calib == '0':
-        x_fit = np.arange(0,800,1)
-
-        plt.plot(x,data,marker = "o",c = "red",linewidth = 1,markersize = 6)
-        plt.plot(x_fit,func(x_fit,a,b))
-        plt.title('I-V at ')
-        plt.xlabel("I_bias[uA]")
-        plt.ylabel("V_out[V]")
-        plt.grid(True)
-        plt.show()
-        
-        start = int(input('start:'))
-        stop = int(input('stop:'))
-        print(f"maybe {func(start,a,b)}")
-        change = float(input('change: '))
-        diff =  change - data[np.where(x==start)][0]
-
-        data[np.where(x==start)[0][0]:np.where(x==stop)[0][0]] += diff
-
-        plt.plot(x,data,marker = "o",c = "red",linewidth = 1,markersize = 6)
-        plt.plot(x_fit,func(x_fit,a,b))
-        plt.title('I-V at ')
-        plt.xlabel("I_bias[uA]")
-        plt.ylabel("V_out[V]")
-        plt.grid(True)
-        plt.show()
-
-        calib =  input('continue? yes[0],no[1]')
-
-    return data
-
-
 
 def main():
+    ax = sys.argv
+    ax.pop(0)
     
-    os.chdir(path)
-    os.makedirs('output',exist_ok = True)
+    os.chdir(ax[0])
+
+
+    if not os.path.exists('output'):
+        os.mkdir('output')
+    if not os.path.exists('rawdata'):
+        os.mkdir('rawdata')
+    
+
     temps = glob.glob("*mK")
 
     for t in temps:
@@ -93,7 +69,7 @@ def main():
         eta = 1 / popt[0]
         print(f"eta (uA/V): {eta}")
 
-        popt2, cov2 = curve_fit(func,I_bias[-10:-1],V_out[-10:-1])
+        
         
 
         I_tes = eta * V_out
@@ -102,21 +78,18 @@ def main():
         R_tes = V_tes[1:] / I_tes[1:]
         R_tes =  np.append(0.0,R_tes)
 
-        x_fit = np.arange(0,I_bias[-1],1)
-        y_fit = func(x_fit,*popt2) 
-        y_fit -= y_fit[0]
-
-        np.savetxt(f"output/IV_{t}.txt",[I_bias,V_out])
+        
+        np.savetxt(f"rawdata/IV_{t}.txt",[I_bias,V_out])
 
         # I-V graugh
         plt.plot(I_bias,V_out,marker = "o",c = "red",linewidth = 1,markersize = 6)
-        plt.plot(x_fit,y_fit)
         plt.title('I-V at {t}')
         plt.xlabel("I_bias[uA]")
         plt.ylabel("V_out[V]")
         plt.grid(True)
         plt.savefig(f"output/IV_{t}.png")
-        plt.show()
+        #plt.show()
+        plt.cla()
         
         # I-R graugh
         plt.plot(I_bias,R_tes,marker = "o",c = "red",linewidth = 1,markersize = 6)
@@ -126,7 +99,6 @@ def main():
         plt.grid(True)
         plt.savefig(f"output/IR_{t}.png")
         plt.cla()
-        calibration(I_bias,V_out,*popt)
 
     for t in temps:
         files = natsorted(glob.glob(os.path.join(t,"*.dat")))
@@ -148,7 +120,7 @@ def main():
     plt.ylabel("V_out[V]")
     plt.grid(True)
     plt.legend()
-    plt.savefig(f"output/IV_{t}mK.png")
+    plt.savefig(f"output/IV_matome.png")
     plt.show()
     
         
