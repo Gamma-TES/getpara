@@ -61,13 +61,9 @@ if __name__ == '__main__':
     os.chdir(path) 
 
 
-    #パルス解析モード
-    kind = input('pulse -> [0], noise -> [1]): ')
-    if kind == '0':
-        path = natsorted(glob.glob(f'CH{ch}_pulse/rawdata/CH{ch}_*.dat'))
-    elif kind == '1':
-        path = natsorted(glob.glob(f'CH{ch}_noize/rawdata/CH{ch}_*.dat'))
-
+    
+    path = natsorted(glob.glob(f'CH{ch}_pulse/rawdata/CH{ch}_*.dat'))
+    
     #path = natsorted(glob.glob(f'test/rawdata/CH{ch}_*.dat'))
     mode = input('Analysis Mode (all -> [0], one -> [1]): ')
     #全てのパルスを解析
@@ -113,8 +109,12 @@ if __name__ == '__main__':
         
         #1つのパルスを解析
     elif mode == '1':
-        num = input('Enter pulse number: ')
-        path = os.path.join('CH'+ch+'_pulse'+'/rawdata/CH'+ch+'_'+str(num)+'.dat')
+        kind = input('pulse -> [0], noise -> [1]): ')
+        num = input('Enter number: ')
+        if kind == '0':
+            path = f'CH{ch}_pulse/rawdata/CH{ch}_{num}.dat'
+        elif kind == '1':
+            path = f'CH{ch}_noize/rawdata/CH{ch}_{num}.dat'
         data = gp.loadbi(path)
         base,data = gp.baseline(data,presamples,x_ba,w_ba)
         mv = gp.moving_average(data,mv_av)
