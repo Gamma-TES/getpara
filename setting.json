@@ -1,6 +1,6 @@
 {
     "Config": {
-        "path": "E:\\matsumi\\data\\20230428\\room2-2_115mK_1000uA_gain10_trig0.1_10kHz",
+        "path": "H:/Matsumi/data/20230418/room2-2_140mK_870uA_gain10_trig0.1_10kHz",
         "channel": "0",
         "rate": 2000000,
         "samples": 100000,

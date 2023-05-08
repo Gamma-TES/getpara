@@ -49,6 +49,7 @@ def main():
 
     cnt = 0
     for i in files:
+        temp = re.sub(r"\D", "", i)
         data = np.loadtxt(i)
         I_bias = data[0]
         V_out = data[1]

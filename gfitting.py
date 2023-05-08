@@ -29,6 +29,7 @@ pulseheight = np.array(gp.extruct(df,x_ax))[0]
 print(pulseheight)
 
 
+
 energy = float(input('エネルギー(keV)を入れてください:'))
 
 pulse_fmin = float(input('パルス高の最小値:'))
@@ -38,9 +39,7 @@ for i in range(len(pulseheight)):
 	if pulse_fmin <= pulseheight[i]  <= pulse_fmax:
 		pulseheight_f.append(pulseheight[i])
 
-bin_n = 100		#ビンの数 （細かいヒストグラムにガウスフィッティングを描きたい場合は増やす）
-hist, bin_edges = np.histogram(pulseheight_f, bins=bin_n)
-bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2			#ビンの中心値を取得
+
 
 #フィッティングの初期値
 p0 = [0]*3
