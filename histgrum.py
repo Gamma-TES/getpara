@@ -74,6 +74,10 @@ def main():
     df = pd.read_csv((f'CH{ch}_pulse/output/output.csv'),index_col=0)
     data = gp.extruct(df,y_ax)
     hist = np.histogram(data,bins=bins,range={0,50})[0]
+<<<<<<< HEAD
+=======
+
+>>>>>>> ebcaea4bda3398b912ca2aa5b9fe636601db88ab
 
     output = f"CH{ch}_pulse/output"
     set = json.dumps(hist_set,indent=4)
