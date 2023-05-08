@@ -74,7 +74,7 @@ def main():
     # Load data and transform histgrum
     df = pd.read_csv((f'CH{ch}_pulse/output/output.csv'),index_col=0)
     data = gp.extruct(df,y_ax)
-    hist = np.histogram(data,bins=bins,range=(hist_set["hist_range_min"],hist_set['hist_range_max']))[0]
+    hist = np.histogram(data,bins=bins,range=(0,100))[0]
 
 
     output = f"CH{ch}_pulse/output"
