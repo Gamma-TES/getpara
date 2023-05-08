@@ -62,7 +62,12 @@ if __name__ == '__main__':
 
 
     #パルス解析モード
-    path = natsorted(glob.glob(f'CH{ch}_pulse/rawdata/CH{ch}_*.dat'))
+    kind = input('pulse -> [0], noise -> [1]): ')
+    if kind == '0':
+        path = natsorted(glob.glob(f'CH{ch}_pulse/rawdata/CH{ch}_*.dat'))
+    elif kind == '1':
+        path = natsorted(glob.glob(f'CH{ch}_noize/rawdata/CH{ch}_*.dat'))
+
     #path = natsorted(glob.glob(f'test/rawdata/CH{ch}_*.dat'))
     mode = input('Analysis Mode (all -> [0], one -> [1]): ')
     #全てのパルスを解析
