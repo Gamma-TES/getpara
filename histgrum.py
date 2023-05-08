@@ -62,6 +62,7 @@ def gausse(x,A,mu,sigma):
 def FWHW(sigma):
     return 2*sigma*(2*np.log(2))**(1/2)
 
+
 def main():
 
     # Load Setting 
