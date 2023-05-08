@@ -44,17 +44,21 @@ def main():
     amp = np.abs(F)
     amp_spe = np.sqrt(amp)*int(eta)*1e+6*np.sqrt(1/rate/samples)
     sp.graugh_spe(fq[:int(samples/2)+1],amp_spe[:int(samples/2)+1])
+    plt.savefig(os.path.join(path_output,'averagepulse_spectrum.png'))
+    plt.show()
 
     #LowPassFilter
     F2 = lowpass(F,fq,cf)
     amp_filt = np.abs(F2)
     amp_spe_filt = np.sqrt(amp_filt)*int(eta)*1e+6*np.sqrt(1/rate/samples)
     sp.graugh_spe(fq[:int(samples/2)+1],amp_spe_filt[:int(samples/2)+1])
+    plt.show()
 
     filt = fft.ifft(F2/noise_spe)
     filt = filt.real
     np.savetxt(os.path.join(path_output,'opt_template.txt'),filt)
     plt.plot(time,filt)
+    plt.savefig(os.path.join(path_output,'opt_template.png'))
     plt.show()
 
     pulsehight_array = []

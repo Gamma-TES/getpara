@@ -110,7 +110,7 @@ if __name__ == '__main__':
         #1つのパルスを解析
     elif mode == '1':
         kind = input('pulse -> [0], noise -> [1]): ')
-        num = input('Enter number: ')
+        num = input('Enter pulse number: ')
         if kind == '0':
             path = f'CH{ch}_pulse/rawdata/CH{ch}_{num}.dat'
         elif kind == '1':
@@ -135,6 +135,8 @@ if __name__ == '__main__':
         
         
         gp.graugh(path,data,time)
+        plt.yscale('log')
+        plt.show()
         plt.plot(time[presamples-x_ba:presamples-x_ba+w_ba],data[presamples-x_ba:presamples-x_ba+w_ba],color = "green",label="base")
         plt.plot(time[rise_10:rise_90],data[rise_10:rise_90],color = "black",label="rise")
         plt.scatter(time[peak_index],peak_av, color='red', label ='peak',zorder = 2)
@@ -171,6 +173,7 @@ if __name__ == '__main__':
         
         gp.graugh(path,mv,time[:samples-mv_av+1])
         plt.scatter(time[peak_mv_index],mv[peak_mv_index], label ='mv_peak',color = 'yellow',zorder = 2)
+        
         plt.show()
         plt.cla()
 

@@ -12,14 +12,22 @@ import sys
 
 # Parameter
 
-x_ax = 'rise'          
-y_ax = 'height_opt_temp'
-output = 'output'
+
+#平均パルスを作成
+def average_pulse(index,presamples):
+    array = []
+    for i in index:
+        data = gp.loadbi(i)
+        base,data = gp.baseline(data,presamples,1000,500)
+        array.append(data)
+    av = np.mean(array,axis=0)
+    return av
 
 def main():
     ax = sys.argv
     ax.pop(0)
     set = gp.loadJson()
+    print(set)
 
     os.chdir(set["Config"]["path"])
     df = pd.read_csv((f'CH{set["Config"]["channel"]}_pulse/output/output.csv'),index_col=0)
@@ -28,6 +36,10 @@ def main():
     df = df[(df['samples']==samples)&(df['height']>threshold)]
     #&(df['decay']>0.001)&(df['rise']<0.0001)&(df['max_div']<0.01)&(df['decay']>0.01)
     print(f'Pulse : {len(df)} samples')
+
+    a = df.loc['CH0_pulse/rawdata\CH0_47388.dat']
+    print(a)
+    df = df[(df['decay']>0.012)]
 
     #平均パルスを取得
     if len(ax) == 1:
@@ -41,21 +53,41 @@ def main():
 
 
     elif len(ax) == 2:
+        x,y = gp.extruct(df,*ax)
+        plt.scatter(x,y,s=0.4)
+        plt.scatter(a['base'],a['height'])
+        plt.show()
+
         picked = gp.pickSamples(df,*ax) # pick samples from graugh
         print(f"Selected {len((picked))} samples.")
 
         if len(picked) == 1:
             path_name = picked[0]
             picked_data = gp.loadbi(path_name)
+            print(df.loc[path_name]) 
             gp.graugh(path_name,picked_data,time)
             plt.show()
         else:
             print('Creating Average Pulse...')
+            for i in picked:
+                data = gp.loadbi(i)
+                base,data = gp.baseline(data,presamples,1000,500)
+                name = os.path.splitext(os.path.basename(i))[0]
+                plt.plot(time,data)
+                plt.xlim(0.0995,0.11)
+                plt.title(name)
+                #plt.yscale('log')
+                plt.xlabel("time(s)")
+                plt.ylabel("volt(V)")
+                plt.savefig(f'CH{ch}_pulse/output/images/{name}.png')
+                plt.cla()
+
             av = gp.average_pulse(picked,presamples)
             plt.plot(time,av)
             plt.xlabel("time(s)")
             plt.ylabel("volt(V)")
             plt.title("average pulse")
+            #plt.yscale('log')
             plt.savefig(f'CH{ch}_pulse/output/average_pulse.png')
             plt.show()
             np.savetxt(f'CH{ch}_pulse/output/selected_index.txt',picked,fmt="%s")

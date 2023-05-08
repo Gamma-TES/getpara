@@ -389,6 +389,7 @@ def graugh(path,data,time):
     plt.xlabel("time(s)")
     plt.ylabel("volt(V)")
     plt.title(title.replace('.dat',''))
+    
     #plt.legend()
     #plt.show()
     #plt.cla()

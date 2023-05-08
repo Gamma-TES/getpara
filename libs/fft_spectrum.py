@@ -21,12 +21,13 @@ def fft_amp(data,samples,acf):
 def graugh_spe(data,fq):
     plt.plot(data,fq,label="data")
     plt.xlabel("Freaquency(Hz)")
-    plt.ylabel("Amplitude")
+    plt.ylabel('Intensity[pA/kHz$^{1/2}$]')
     plt.xscale('log')
     plt.yscale('log')
     plt.title('Average pulse spectrum')
+    
     #a = plt.ginput(n=2,mouse_add=1,mouse_pop=3,mouse_stop=2)
-    plt.show()
+    
     
 def bandstop(x, rate, fp, fs, gpass, gstop):
     fn = rate / 2                           #ナイキスト周波数

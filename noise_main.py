@@ -19,7 +19,7 @@ def main():
     set = gp.loadJson()
     os.chdir(set["Config"]["path"])
     ch = set['Config']['channel']
-    rate,samples= set["Config"]["rate"],set["Config"]["samples"],set["Config"]
+    rate,samples= set["Config"]["rate"],set["Config"]["samples"]
     time = gp.data_time(rate,samples)
     fq = np.arange(0,rate,rate/samples)
     eta = input("eta: ")
@@ -33,14 +33,20 @@ def main():
                 for row in f.read().splitlines():
                     noise.append(row)
     
-    noise = natsorted(glob.glob(f"CH{ch}_noize/rawdata/CH{ch}_*.dat"))
+    noise = natsorted(glob.glob(f"CH{ch}_noize/test/CH{ch}_*.dat"))
 
     for i in noise:
-        print(i)
         try :
             data = gp.loadbi(i)
-            amp = np.abs(fft.fft(data))**2
+            base,data_ba = gp.baseline(data,set['Config']['presamples'],1000,500)
+            peak = np.max(data_ba)
+            if (base <= -3 and base >= 3) or peak >= float(set['Config']['threshold']):
+                print("Not noise")
+                continue
+            amp = np.abs(fft.fft(data_ba))**2
             model = model + amp
+
+            print(i)
         except FileNotFoundError:
             continue
     model = model/len(noise)
@@ -54,7 +60,7 @@ def main():
     #スペクトルをグラフ化
     plt.plot(fq[:int(samples/2)+1],amp_spe,linestyle = '-',linewidth = 0.7)
     plt.loglog()
-    plt.xlabel('Frequency[kHz]')
+    plt.xlabel('Frequency[Hz]')
     plt.ylabel('Intensity[pA/kHz$^{1/2}$]')
     plt.grid()
     plt.savefig(f'CH{ch}_noize/output/modelnoise.png')
