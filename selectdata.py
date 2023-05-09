@@ -37,8 +37,8 @@ def main():
     #&(df['decay']>0.001)&(df['rise']<0.0001)&(df['max_div']<0.01)&(df['decay']>0.01)
     print(f'Pulse : {len(df)} samples')
 
-    a = df.loc['CH0_pulse/rawdata\CH0_47388.dat']
-    print(a)
+    #a = df.loc['CH0_pulse/rawdata\CH0_47388.dat']
+    #print(a)
     df = df[(df['decay']>0.012)]
 
     #平均パルスを取得
@@ -55,7 +55,7 @@ def main():
     elif len(ax) == 2:
         x,y = gp.extruct(df,*ax)
         plt.scatter(x,y,s=0.4)
-        plt.scatter(a['base'],a['height'])
+        #plt.scatter(a['base'],a['height'])
         plt.show()
 
         picked = gp.pickSamples(df,*ax) # pick samples from graugh
