@@ -10,16 +10,10 @@ import json
 
 
 # ---Parameter--------------------------------------------------
-
-hist_set = {
-    "bins" :8192,
-}
-#------------------------------------------------
-
-         
 y_ax = 'height_opt_temp'
-bins = hist_set['bins']
-
+bins = 4096
+hist_range = (0,9)
+#------------------------------------------------
 
 cmap = cm.get_cmap("Set2")
 
@@ -73,24 +67,15 @@ def main():
     # Load data and transform histgrum
     df = pd.read_csv((f'CH{ch}_pulse/output/output.csv'),index_col=0)
     data = gp.extruct(df,y_ax)
-    hist = np.histogram(data,bins=bins,range={0,50})[0]
-<<<<<<< HEAD
-=======
-
->>>>>>> ebcaea4bda3398b912ca2aa5b9fe636601db88ab
-
+    hist = np.histogram(data,bins=bins,range=hist_range)[0]
     output = f"CH{ch}_pulse/output"
-    set = json.dumps(hist_set,indent=4)
-    with open(os.path.join(output,"histgrum_set.json"), 'w') as file:
-        file.write(set)
-    np.savetxt(os.path.join(output,"histgrum.txt"),hist)
 
-    # Show histgrum
-    x = np.arange(0,hist_set['bins'],1)
-    plt.bar(x,hist,width=1)
+
+    # Show histgrum 
+    x = np.arange(0,bins,1)
+    plt.hist(data,bins=bins,range = hist_range)
     plt.xlabel('Pulse Height [ch]')
     plt.ylabel('Counts')
-    plt.legend(edgecolor='white', framealpha=1, fontsize=6)
     plt.tick_params(axis='both', which='both', direction='in',
                     bottom=True, top=True, left=True, right=True)
     plt.grid(True, which='major', color='black', linestyle='-', linewidth=0.2)
@@ -99,13 +84,12 @@ def main():
     
 
     # Serch peaks
+    """
     peaks = gp.search_peak(hist)
     print(f"{len(peaks)} peaks are detected!\n")
     for i in peaks:
         print(i)
-    
-
-
+    """
 
     """
     # Fiiting every peaks and plot
