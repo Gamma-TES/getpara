@@ -39,7 +39,7 @@ def main():
 
     #a = df.loc['CH0_pulse/rawdata\CH0_47388.dat']
     #print(a)
-    df = df[(df['decay']>0.012)]
+    #df = df[(df['decay']>0.012)]
 
     #平均パルスを取得
     if len(ax) == 1:
@@ -54,8 +54,12 @@ def main():
 
     elif len(ax) == 2:
         x,y = gp.extruct(df,*ax)
-        plt.scatter(x,y,s=0.4)
+        plt.scatter(x,y,s=1)
         #plt.scatter(a['base'],a['height'])
+        plt.xlabel(ax[0])
+        plt.ylabel(ax[1])
+        plt.title(f"{ax[0]} vs {ax[1]}")
+        plt.grid()
         plt.show()
 
         picked = gp.pickSamples(df,*ax) # pick samples from graugh
@@ -74,7 +78,7 @@ def main():
                 base,data = gp.baseline(data,presamples,1000,500)
                 name = os.path.splitext(os.path.basename(i))[0]
                 plt.plot(time,data)
-                plt.xlim(0.0995,0.11)
+                plt.xlim(0.009,0.0130)
                 plt.title(name)
                 #plt.yscale('log')
                 plt.xlabel("time(s)")
