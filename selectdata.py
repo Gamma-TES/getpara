@@ -5,7 +5,7 @@ import os
 import libs.getpara as gp
 import sys
 
-# main.py　の後　output.dat　を用いる
+# main.py　の後　output.csv　を用いる
 # 見たい関係性のパラメータをプロット（risetime vs pulseheight など）
 # プロットから平均パルスを作成
 
