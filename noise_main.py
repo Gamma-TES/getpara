@@ -33,7 +33,7 @@ def main():
                 for row in f.read().splitlines():
                     noise.append(row)
     
-    noise = natsorted(glob.glob(f"CH{ch}_noize/test/CH{ch}_*.dat"))
+    noise = natsorted(glob.glob(f"CH{ch}_noize/rawdata/CH{ch}_*.dat"))
 
     for i in noise:
         try :
@@ -50,6 +50,7 @@ def main():
         except FileNotFoundError:
             continue
     model = model/len(noise)
+
     amp_spe = np.sqrt(model[:int(samples/2)+1])*int(eta)*1e+6*np.sqrt(1/rate/samples)
 
     os.mkdir(f'CH{ch}_noize/output')

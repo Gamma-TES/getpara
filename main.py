@@ -135,8 +135,7 @@ if __name__ == '__main__':
         
         
         gp.graugh(path,data,time)
-        plt.yscale('log')
-        plt.show()
+
         plt.plot(time[presamples-x_ba:presamples-x_ba+w_ba],data[presamples-x_ba:presamples-x_ba+w_ba],color = "green",label="base")
         plt.plot(time[rise_10:rise_90],data[rise_10:rise_90],color = "black",label="rise")
         plt.scatter(time[peak_index],peak_av, color='red', label ='peak',zorder = 2)
