@@ -7,6 +7,7 @@ import numpy as np
 import pandas as pd
 import scipy.fftpack as fft
 from scipy.optimize import curve_fit
+from scipy import signal
 import shutil
 import os
 import re
@@ -63,6 +64,7 @@ def loadJson():
     with open("setting.json") as f:
         jsn = json.load(f)
     return jsn
+
 
 def loadIndex(path):
     index = []
@@ -166,6 +168,14 @@ def double_event(data,peak_index,rise_width,threshold):
         else:
             return "single"
 
+# LP Filter
+def BesselFilter(x,rate,fs):
+    #fn = rate/2
+    #ws = fs/fn
+    ws = fs/rate*2
+    b,a = signal.bessel(2,ws,"low")
+    y = signal.filtfilt(b,a,x)
+    return y
 
 #移動平均
 def moving_average(x,w):
@@ -214,13 +224,12 @@ def monoExp(x,m,t):
 def doubleExp(x,m1,t1,m2,t2):
     return m1*np.exp(-t1*x) + m2*np.exp(-t2*x)
 
-def fitting(data,peak_index,time,x,w,mode):
+def fitting(data,peak_index,time,x,w,mode,p0):
     start = peak_index+x
     x = time[start:start+w]
     y = data[start:start+w]
-    p0 = [14,70]
     try :
-        params,cov = curve_fit(monoExp,x,y,p0=p0,maxfev=5000)
+        params,cov = curve_fit(monoExp,x,y,p0=p0,maxfev=500000)
         m = params[0]
         t = params[1]
         tauSec = 1/t
@@ -236,7 +245,6 @@ def fitting(data,peak_index,time,x,w,mode):
         print('Error')
         m , t, tauSec, rSquared ,max_div,max_index = 0,0,0,0,0,0
         
-
     return m , t, tauSec, rSquared ,max_div,max_index
 
 #フィッティング(二次指数関数)
@@ -286,7 +294,7 @@ def search_peak(hist):
     
     #plt.show()
     min= int(input("range min: "))
-    threshold = 0.5
+    threshold = 1
     print("\n")
 
     trigger = False
@@ -294,11 +302,9 @@ def search_peak(hist):
     peak_list = []
     for i in reversed(np.arange(min,len(hist)-10,1)):
         if trigger == False and diff[i] < threshold * -1:
-            print(i)
             trigger = True
         if trigger == True and diff[i] > 0:
             if trigger2 == False:
-                print(i)
                 peak = []
                 peak.append(np.max(hist[i:i+10]))
                 peak.append(np.argmax(hist[i:i+10])+i)

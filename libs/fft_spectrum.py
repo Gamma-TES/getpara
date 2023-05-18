@@ -12,6 +12,15 @@ def hanning(data,samples):
     data = data*han
     return data,acf  
 
+def BesselFilter(x,rate,fs):
+    fn = rate/2
+    ws = fs/fn
+    b,a = signal.bessel(4,ws,"low")
+    y = signal.filtfilt(b,a,x)
+    return y
+
+
+
 #fft
 def fft_amp(data,samples,acf):
     f = fft.fft(data)
@@ -67,7 +76,7 @@ def filter(data,rate,samples):
     print(f2)
     F2 =np.abs(f2)
     ifft = np.fft.ifft(f2)
-    #graugh_fft('fft',F2[:int(samples/2)+1],fq[:int(samples/2)+1])
+    graugh_fft('fft',F2[:int(samples/2)+1],fq[:int(samples/2)+1])
     graugh_spe('fft',F2,fq)
     return ifft.real 
 

@@ -18,9 +18,9 @@ from scipy.optimize import curve_fit
 #----------- パルスハイトの読み込み ----------------
 
 set = gp.loadJson()
-os.chdir(set['path'])
-df = pd.read_csv((f'CH{set["channel"]}_pulse/output/output.csv'),index_col=0)
-rate,samples,presamples,threshold,ch = set["rate"],set["samples"],set["presamples"],set["threshold"],set["channel"]
+os.chdir(set["Config"]['path'])
+df = pd.read_csv((f'CH{set["Config"]["channel"]}_pulse/output/output.csv'),index_col=0)
+rate,samples,presamples,threshold,ch = set["Config"]["rate"],set["Config"]["samples"],set["Config"]["presamples"],set["Config"]["threshold"],set["Config"]["channel"]
 
 pulseheight = df["height_opt_temp"]
 

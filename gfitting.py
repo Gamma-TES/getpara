@@ -40,7 +40,7 @@ for i in range(len(pulseheight)):
 		pulseheight_f.append(pulseheight[i])
 
 
-bin_n = 100		#ビンの数 （細かいヒストグラムにガウスフィッティングを描きたい場合は増やす）
+bin_n = 20		#ビンの数 （細かいヒストグラムにガウスフィッティングを描きたい場合は増やす）
 hist, bin_edges = np.histogram(pulseheight_f, bins=bin_n)
 bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2	
 

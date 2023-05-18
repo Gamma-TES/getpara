@@ -11,43 +11,11 @@ import json
 
 # ---Parameter--------------------------------------------------
 y_ax = 'height_opt_temp'
-bins = 4096
-hist_range = (0,9)
+bin = 8192
 #------------------------------------------------
 
 cmap = cm.get_cmap("Set2")
 
-def search_peak(hist):
-    diff = gp.diff(hist)
-    diff2 = gp.diff(diff)
-
-    plt.plot(diff)
-    plt.show()
-    min= int(input("range min: "))
-    max= int(input("range max: "))
-    threshold = float(input("Threshold: "))
-    print("\n")
-
-    trigger = False
-    trigger2 = False 
-    peak_list = []
-
-    for i in reversed(np.arange(min,max,1)):
-        if trigger == False and diff[i] < threshold * -1:
-            trigger = True
-        if trigger == True and diff[i] > 0:
-            if trigger2 == False:
-                peak = []
-                peak.append(np.max(hist[i-1:i+1]))
-                peak.append(np.argmax(hist[i-1:i+1]))
-                trigger2 = True
-            if trigger2 == True and diff2[i] > 0:
-                peak.append(2 * (peak[1]-(i-1)))
-                peak_list.append(peak)
-                trigger = False
-                trigger2 = False
-
-    return peak_list
 
 
 def gausse(x,A,mu,sigma):
@@ -66,29 +34,30 @@ def main():
 
     # Load data and transform histgrum
     df = pd.read_csv((f'CH{ch}_pulse/output/output.csv'),index_col=0)
-    data = gp.extruct(df,y_ax)
-    hist = np.histogram(data,bins=bins,range=hist_range)[0]
-    output = f"CH{ch}_pulse/output"
+    data_index = gp.loadIndex(f'CH{ch}_pulse/output/select/selected_base_index.txt')
+    data = df.loc[data_index,"height_opt_temp"]
+    hist,bins = np.histogram(data,bins=bin,range=[0,np.max(data)*1.05])
 
-
-    # Show histgrum 
-    x = np.arange(0,bins,1)
-    plt.hist(data,bins=bins,range = hist_range)
+    
+    #plt.hist(data,bins=bins, range=[0,np.max(data)*1.05])
+    plt.bar(bins[:-1],hist,width = bins[1]-bins[0])
     plt.xlabel('Pulse Height [ch]')
     plt.ylabel('Counts')
     plt.tick_params(axis='both', which='both', direction='in',
                     bottom=True, top=True, left=True, right=True)
     plt.grid(True, which='major', color='black', linestyle='-', linewidth=0.2)
     plt.grid(True, which='minor', color='black', linestyle=':', linewidth=0.1)
+    plt.savefig(f'CH{ch}_pulse/output/select/histgrum.png')
     plt.show()
     
 
     # Serch peaks
     """
-    peaks = gp.search_peak(hist)
-    print(f"{len(peaks)} peaks are detected!\n")
-    for i in peaks:
-        print(i)
+    if input("Serch peaks[0]: ") == "0":
+        peaks = gp.search_peak(hist)
+        print(f"{len(peaks)} peaks are detected!\n")
+        for i in peaks:
+            print(i)
     """
 
     """

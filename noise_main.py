@@ -13,6 +13,7 @@ import shutil
 import libs.getpara as gp
 import pandas as pd
 
+cf = 4e4
 
 #実行
 def main():
@@ -35,9 +36,12 @@ def main():
     
     noise = natsorted(glob.glob(f"CH{ch}_noize/rawdata/CH{ch}_*.dat"))
 
+    lpf = input('Low Pass Filter? [1]): ')
     for i in noise:
         try :
             data = gp.loadbi(i)
+            if lpf == '1':
+                data = gp.BesselFilter(data,rate,cf)
             base,data_ba = gp.baseline(data,set['Config']['presamples'],1000,500)
             peak = np.max(data_ba)
             if (base <= -3 and base >= 3) or peak >= float(set['Config']['threshold']):

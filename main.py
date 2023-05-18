@@ -36,18 +36,20 @@ import json
 
 
 #-----②解析パラメータ------------------------------------------------
-x_ba = 1000     #baseを取るときのスタート点: presamples - x_ba
-w_ba = 500      #baseを取る幅: presamples - x_ba + w_ba
-w_max = 500     #peakを探す幅: presamples + w_max
-x_av = 10       #peak_avを探す時のスタート点: peak_index - x_av
-w_av = 30       #peak_avを探す幅: peak_index - x_av + w_av
-x_fit = 5       #fittingのスタート点: peak_index(average) + x_fit
-w_fit = 800     #fittingの幅: peak_index(average) + x_fit + w_fit
-mv_av = 100     #移動平均の幅
-decay_sillicon = 0.001 #シリコンイベント判別の為のディケイ
+cf = 4e4        # Low Pass Filter cut off
+x_ba = 1000     # baseを取るときのスタート点: presamples - x_ba
+w_ba = 500      # baseを取る幅: presamples - x_ba + w_ba
+w_max = 300     # peakを探す幅: presamples + w_max
+x_av = 5       # peak_avを探す時のスタート点: peak_index - x_av
+w_av = 20       # peak_avを探す幅: peak_index - x_av + w_av
+x_fit = 100       # fittingのスタート点: peak_index(average) + x_fit
+w_fit = 800     # fittingの幅: peak_index(average) + x_fit + w_fit
+mv_av = 100     # 移動平均の幅
+decay_sillicon = 0.001 # コンイベント判別の為のディケイ
 #-----------------------------------------------------------------
 
-
+def monoExp(x,m,t):
+    return m*np.exp(-t*x)
 
 #実行
 if __name__ == '__main__':
@@ -68,11 +70,14 @@ if __name__ == '__main__':
     mode = input('Analysis Mode (all -> [0], one -> [1]): ')
     #全てのパルスを解析
     if mode == '0':
-        fit = int(input('fitting? (no -> [0], yes -> [1]): '))
+        fit = input('fitting? [1]): ')
+        lpf = input('Low Pass Filter? [1]): ')
         data_array = []
         for num in path:
             print(os.path.basename(num))
             data = gp.loadbi(num)
+            if lpf == "1":
+                data = gp.BesselFilter(data,rate,cf)
             base,data = gp.baseline(data,presamples,x_ba,w_ba)
             mv = gp.moving_average(data,mv_av)
             dif  = gp.diff(mv)
@@ -81,8 +86,8 @@ if __name__ == '__main__':
             rise,rise_10,rise_90 = gp.risetime(data,peak_mv,peak_mv_index,rate)
             decay = gp.decaytime(data,peak_mv,peak_mv_index,rate)
 
-            if fit:
-                m,t,tauSec,rSquared,max_div,max_index = gp.fitting(data,peak_index,time,x_fit,w_fit,mode)
+            if fit == '1':
+                m,t,tauSec,rSquared,max_div,max_index = gp.fitting(data,peak_index,time,x_fit,w_fit,mode,p0 = [-14,70])
                 data_column = [samples,base,peak_av,peak_mv_av,rise,decay,tauSec,max_div,rSquared]
             else:
                 data_column = [samples,base,peak_av,peak_mv_av,rise,decay]
@@ -93,7 +98,7 @@ if __name__ == '__main__':
             data_array.append(data_column)
             #DataFrameの作成
 
-        if fit:
+        if fit == "1":
             df = pd.DataFrame(data_array,\
             columns=["samples","base","height","height_mv","rise","decay","tauSec","max_div","rSquared"],\
             index=path)
@@ -103,23 +108,31 @@ if __name__ == '__main__':
             columns=["samples","base","height","height_mv","rise","decay"],\
             index=path)
 
-        output_path = (f'CH{ch}_pulse/output')
-        gp.output(output_path,df)
+        output = (f'CH{ch}_pulse/output')
+        if not os.path.exists(output):
+            os.makedirs(output,exist_ok=True)
+            df.to_csv(os.path.join(output,"output.csv"))
+        else:
+            replace = input('Replace output folder? (Yes -> [0], No (not save) -> [1]): ')
+            if replace =='0':
+                shutil.rmtree(output)
+                os.makedirs(output,exist_ok=True)
+                df.to_csv(os.path.join(output,"output.csv"))
         print('end')    
         
         #1つのパルスを解析
     elif mode == '1':
-        kind = input('pulse -> [0], noise -> [1]): ')
         num = input('Enter pulse number: ')
-        if kind == '0':
-            path = f'CH{ch}_pulse/rawdata/CH{ch}_{num}.dat'
-        elif kind == '1':
-            path = f'CH{ch}_noize/rawdata/CH{ch}_{num}.dat'
+        path = f'CH{ch}_pulse/rawdata/CH{ch}_{num}.dat'
         data = gp.loadbi(path)
+
+            
         base,data = gp.baseline(data,presamples,x_ba,w_ba)
         mv = gp.moving_average(data,mv_av)
         dif  = gp.diff(mv)
-        peak,peak_av,peak_index = gp.peak(data,presamples,w_max,x_av,w_av)
+        filt = gp.BesselFilter(data,rate,cf)
+
+        peak,peak_av,peak_index = gp.peak(filt,presamples,w_max,x_av,w_av)
         peak_mv,peak_mv_av,peak_mv_index = gp.peak(mv,presamples,w_max,x_av,w_av)
         rise,rise_10,rise_90 = gp.risetime(data,peak_mv,peak_mv_index,rate)
         decay = gp.decaytime(data,peak_mv,peak_mv_index,rate)
@@ -135,19 +148,31 @@ if __name__ == '__main__':
         
         
         gp.graugh(path,data,time)
+        plt.plot(time,filt,'-.',label = "filt")
 
-        plt.plot(time[presamples-x_ba:presamples-x_ba+w_ba],data[presamples-x_ba:presamples-x_ba+w_ba],color = "green",label="base")
-        plt.plot(time[rise_10:rise_90],data[rise_10:rise_90],color = "black",label="rise")
+        plt.plot(time[presamples-x_ba:presamples-x_ba+w_ba],data[presamples-x_ba:presamples-x_ba+w_ba],'--',color = "green",label="base")
+        plt.vlines(time[rise_10],ymin=0,ymax=data[rise_10],color = 'tab:red',linestyle='-.')
+        plt.vlines(time[rise_90],ymin=0,ymax=data[rise_90],color = 'tab:red',linestyle='-.')
+        plt.scatter(time[rise_10],data[rise_10],color = 'tab:red')
+        plt.scatter(time[rise_90],data[rise_90],color = 'tab:red')
+        #plt.vlines(time[rise_90],color = 'red',linestyle='-.')
+        #plt.plot(time[rise_10:rise_90],data[rise_10:rise_90],'--',color = "black",label="rise")
+        #plt.plot(time[peak_index + x_fit:peak_index + x_fit + w_fit],data[peak_index + x_fit:peak_index + x_fit+ w_fit], label ='fit_range',zorder = 2)
+
+
+        #fit_time = time[:]
+        #fit_data = -1*data[:]
+        #plt.plot(fit_time,fit_data)
+        m,t,tauSec,rSquared,max_div,max_index = gp.fitting(data,peak_index,time,x_fit,w_fit,mode,p0 = [-14,70])
+
+        #m2,t2,tauSec2,rSquared2,max_div2,max_index2 = gp.fitting(fit_data,rise_10,time,-10,100,mode,p0 = [-1,1])
+        #m2,t2 = monoExp(time[rise_10:],1,-16000)
+        
+        #fit = gp.monoExp(time[rise_10:],m,t) + gp.monoExp(time[rise_10:],m2,t2) 
+        #plt.plot(time[rise_10:],fit)
         plt.scatter(time[peak_index],peak_av, color='red', label ='peak',zorder = 2)
         plt.scatter(time[presamples],data[presamples], color='magenta', label ='risepoint',zorder = 2)
-        plt.plot(time[peak_index + x_fit:peak_index + x_fit+ w_fit],data[peak_index + x_fit:peak_index + x_fit+ w_fit], label ='fit_range',zorder = 2)
-        m,t,tauSec,rSquared,max_div,max_index = gp.fitting(data,peak_index,time,x_fit,w_fit,mode)
-        #m1,t1,m2,t2,tauSec,rSquared,max_div,max_index = gp.fitting_double(data,peak_index,time,x_fit,w_fit,mode)
-        
-        
-        
-        
-        #gp.graugh_save(path,data,time)
+    
         print('\n---------------------------')
         print(path)
         print(f'samples : {len(data)}')
@@ -158,26 +183,23 @@ if __name__ == '__main__':
         print(f'rise : {rise}')
         print(f'decay : {decay}')
         print(f"Y = {m:.3f} * e^(-{t:.3f} * x)")
-        #print(f"Y = {m1:.3f} * e^(-{t1:.3f} * x) + {m2:.3f} * e^(-{t2:.3f} * x)")
-        print(f"tauSec = {tauSec:.5f}")
         print(f"rSquared = {rSquared:.5f}")
         print(f"max_div = {max_div:.5f}")
         print(f"max_index = {max_index}")
 
         
-
+        #print(f"Y = {m1:.3f} * e^(-{t1:.3f} * x) + {m2:.3f} * e^(-{t2:.3f} * x)")
         #plt.yscale("log")
+        #gp.graugh(path,mv,time[:samples-mv_av+1])
+        #plt.scatter(time[peak_mv_index],mv[peak_mv_index], label ='mv_peak',color = 'yellow',zorder = 2)
+
+        plt.grid()
         plt.legend()
-        
-        
-        gp.graugh(path,mv,time[:samples-mv_av+1])
-        plt.scatter(time[peak_mv_index],mv[peak_mv_index], label ='mv_peak',color = 'yellow',zorder = 2)
-        
         plt.show()
         plt.cla()
 
-        gp.graugh('diff pulse',dif,time[:samples-mv_av+1])
-        plt.show()
+        #gp.graugh('diff pulse',dif,time[:samples-mv_av+1])
+        #plt.show()
         print("end")
         print('---------------------------\n')
 

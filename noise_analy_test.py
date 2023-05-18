@@ -33,19 +33,21 @@ def gauss(p,x,y):
 
 def main():
 	set = gp.loadJson()
-	os.chdir(set["path"])
-	df = pd.read_csv((f'CH{set["channel"]}_pulse/output/output.csv'),index_col=0)
-	rate,samples,presamples,threshold,ch = set["rate"],set["samples"],set["presamples"],set["threshold"],set["channel"]
+	os.chdir(set['Config']["path"])
+	df = pd.read_csv((f'CH{set["Config"]["channel"]}_pulse/output/output.csv'),index_col=0)
+	rate,samples,ch = set["Config"]["rate"],set["Config"]["samples"],set["Config"]["channel"]
 	time = gp.data_time(rate,samples)
-	template = np.loadtxt(f'CH{set["channel"]}_pulse/output/opt_template.txt')
+	template = np.loadtxt(f'CH{set["Config"]["channel"]}_pulse/output/opt_template.txt')
 
 	
-	cali = np.loadtxt(f'CH{set["channel"]}_pulse/output/calibration_curve_last2.txt')
+	cali = np.loadtxt(f'CH{set["Config"]["channel"]}_pulse/output/calibration_curve_last.txt')
 
 	noise = []
+	"""
 	with open(f"CH{ch}_noize/random_noise.txt",'r',encoding='latin-1') as f:
 		for row in f.read().splitlines():
 			noise.append(row)
+	"""
         	
 	
 	path = natsorted(glob.glob(f'CH{ch}_noize/rawdata/CH{ch}_*.dat'))

@@ -2,16 +2,28 @@ import os
 import glob
 import numpy as np
 from natsort import natsorted
+import libs.getpara as gp
 
-ch = 0
-start = 144344 #　変更後のファイルの始めの番号
-data = "noize"
-path = 'H:/Matsumi/data/20230424/room2-2_140mK_870uA_gain10_trig0.1_10kHz'
+
+
 
 
 def main():
-    os.chdir(f'{path}/CH{ch}_{data}/rawdata')
-    files = natsorted(glob.glob("*.dat")) 
+    set = gp.loadJson()
+    path = set["Config"]["path"]
+    ch,rate,samples,presamples,threshold = \
+        set["Config"]["channel"],set["Config"]['rate'],set["Config"]['samples'],set["Config"]["presamples"],set["Config"]["threshold"]
+    time = np.arange(0,1/rate*samples,1/rate)
+
+    data = input('pulse[0], noise[1]: ')
+    if data == '0':
+        os.chdir(f'{path}/CH{ch}_pulse/rawdata') 
+    if data == '1':
+        os.chdir(f'{path}/CH{ch}_noize/rawdata') 
+
+    files = natsorted(glob.glob("*.dat"))
+
+    start = int(input("start: "))
     number = np.arange(start,start + len(files),1)
 
     # ファイル名を変更時、ディレクトリ内に同名のファイルを作らないように仮名に変更
