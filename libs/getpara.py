@@ -7,11 +7,13 @@ import numpy as np
 import pandas as pd
 import scipy.fftpack as fft
 from scipy.optimize import curve_fit
+import scipy.optimize
 from scipy import signal
 import shutil
 import os
 import re
 import json
+import warnings
 
 
 
@@ -132,6 +134,8 @@ def risetime(data,peak,peak_index,rate):
     return rise,rise_10,rise_90
 
 
+
+
 #ディケイタイム
 def decaytime(data,peak,peak_index,rate):
     
@@ -221,8 +225,9 @@ def filter(data,rate,samples):
 def monoExp(x,m,t):
     return m*np.exp(-t*x)
 
-def doubleExp(x,m1,t1,m2,t2):
-    return m1*np.exp(-t1*x) + m2*np.exp(-t2*x)
+# Fitting entire pulse
+def doubleExp(x,m,t1,b1,t2,b2):
+    return m * (np.exp(-(x-b1)/t1) - np.exp(-(x-b2)/t2))
 
 def fitting(data,peak_index,time,x,w,mode,p0):
     start = peak_index+x
@@ -232,45 +237,33 @@ def fitting(data,peak_index,time,x,w,mode,p0):
         params,cov = curve_fit(monoExp,x,y,p0=p0,maxfev=500000)
         m = params[0]
         t = params[1]
-        tauSec = 1/t
         squaredDiffs = np.square(y - monoExp(x, m, t))
         squaredDiffsFromMean = np.square(y - np.mean(y))
         rSquared = 1 - np.sum(squaredDiffs) / np.sum(squaredDiffsFromMean)
         max_div = np.sqrt(np.max(squaredDiffs))
-        max_index = np.argmax(squaredDiffs)+peak_index
-        if mode == '1':
-            plt.plot(x, monoExp(x, m, t), '--',label="fitted",c="blue")
             
     except RuntimeError:
         print('Error')
-        m , t, tauSec, rSquared ,max_div,max_index = 0,0,0,0,0,0
-        
-    return m , t, tauSec, rSquared ,max_div,max_index
+        m , t, rSquared ,max_div = 0,0,0,0
+
+    return m , t, rSquared ,max_div
 
 #フィッティング(二次指数関数)
-def fitting_double(data,peak_index,time,x,w,mode):
-    start = peak_index+x
-    x = time[start:start+w]
-    y = data[start:start+w]
-    p0 = [1,1,1]
-
-    params,cov = curve_fit(doubleExp,x,y,p0=p0,maxfev=100000)
-    m1,t1,m2,t2 = params[0],params[1],params[2],params[3]
-    #tauSec = 1/t
-    #squaredDiffs = np.square(y - monoExp(x, m, t))
-    #squaredDiffsFromMean = np.square(y - np.mean(y))
-    #rSquared = 1 - np.sum(squaredDiffs) / np.sum(squaredDiffsFromMean)
-    #max_div = np.sqrt(np.max(squaredDiffs))
-    #max_index = np.argmax(squaredDiffs)+peak_index
-    if mode == '1':
-        plt.plot(x, doubleExp(x, m1,t1,m2, t2), '--',label="fitted",c="orange")
-        
-    #except RuntimeError:
-    #    print('fitting error')
-    #    m , t, tauSec, rSquared ,max_div,max_index = 0,0,0,0,0,0
-    tauSec, rSquared ,max_div,max_index = 0,0,0,0
-
-    return m1,t1,m2,t2, tauSec, rSquared ,max_div,max_index
+def fitting_double(data,presamples,start,width,p0):
+    warnings.simplefilter('ignore')
+    warnings.simplefilter('error',scipy.optimize.OptimizeWarning)
+    warnings.simplefilter('error',scipy.optimize._optimize.OptimizeWarning)
+    x = np.arange(presamples+start,presamples+start+width)
+    y = data[presamples+start: presamples+start+width]
+    try:
+        params,cov = curve_fit(doubleExp,x,y,p0=p0,maxfev=100000)
+        squaredDiffs = np.square(data[presamples+start:presamples+start+width] - doubleExp(x,*params))
+        squaredDiffsFromMean = np.square(data - np.mean(y))
+        rSquared = 1 - np.sum(squaredDiffs) / np.sum(squaredDiffsFromMean)
+    except (scipy.optimize.OptimizeWarning,scipy.optimize._optimize.OptimizeWarning,RuntimeError):
+        params = np.zeros(len(p0))
+        rSquared = 0
+    return params,rSquared
 
 
 def siliconEvent(data,peak_index,rate):

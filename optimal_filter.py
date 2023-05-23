@@ -13,7 +13,7 @@ import pprint
 
 
 #------------------------------------------------
-
+fs = 4e4
 
 
 def lowpass(F,fq,cf):
@@ -41,7 +41,7 @@ def main():
     
 
     eta = input("eta: ")
-    cf = int(input("cut off (kHz): ")) * 1000
+    #cf = int(input("cut off (kHz): ")) * 1000
 
     #Fourier transform
     F = fft.fft(pulse_av)
@@ -53,7 +53,7 @@ def main():
     plt.show()
 
     #LowPassFilter
-    F2 = lowpass(F,fq,cf)
+    F2 = F#lowpass(F,fq,cf)
     amp_filt = np.abs(F2)
     amp_spe_filt = np.sqrt(amp_filt)*int(eta)*1e+6*np.sqrt(1/rate/samples)
     sp.graugh_spe(fq[:int(samples/2)+1],amp_spe_filt[:int(samples/2)+1])
@@ -73,6 +73,7 @@ def main():
         data = gp.loadbi(i)
         base = df.at[i,"base"]
         data = data-base
+        data = gp.BesselFilter(data,rate,fs)
         pulsehight = np.sum(data*filt)
         pulsehight_array.append(pulsehight)
 

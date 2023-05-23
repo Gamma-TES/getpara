@@ -11,6 +11,7 @@ import pprint
 # 見たい関係性のパラメータをプロット（risetime vs pulseheight など）
 # プロットから平均パルスを作成
 
+fs = 4e4
 
 #平均パルスを作成
 def average_pulse(index,presamples):
@@ -26,8 +27,10 @@ ax_unit = {
     "base":'base[V]',
     "height":'pulse height[V]',
     "height_opt":'pulse height opt',
-    'rise':'time[s]',
-    'decay':'time[s]',
+    "height_opt_temp":'pulse height opt temp',
+    'rise':'rise[s]',
+    'decay':'decay[s]',
+    'rise_fit':'rise_fit[s]'
 
 }
 
@@ -38,12 +41,6 @@ def main():
     pprint.pprint(set)
     os.chdir(set["Config"]["path"])
 
-    output = f'CH{set["Config"]["channel"]}_pulse/output/select/img'
-    if not os.path.exists(output):
-        os.makedirs(output,exist_ok=True)
-    else:
-        shutil.rmtree(output)
-        os.mkdir(output)
     
 
     df = pd.read_csv((f'CH{set["Config"]["channel"]}_pulse/output/output.csv'),index_col=0)
@@ -51,7 +48,7 @@ def main():
     time = gp.data_time(rate,samples)
 
 
-    df = df[(df['samples']==samples)&(df['height']>threshold)]
+    df = df[(df['samples']==samples)&(df['height']>threshold)&(df['decay']>0.01)&(df['rise_fit']!=0)&(df['base']>0.0)]
     print(f'Pulse : {len(df)} samples')
 
     #&(df['decay']>0.001)&(df['rise']<0.0001)&(df['max_div']<0.01)&(df['decay']>0.01)
@@ -71,19 +68,28 @@ def main():
 
     elif len(ax) == 2:
         x,y = gp.extruct(df,*ax)
-        plt.scatter(x,y,s=2)
+        plt.scatter(x,y,s=2,alpha=0.5)
         plt.xlabel(ax_unit[ax[0]])
         plt.ylabel(ax_unit[ax[1]])
         plt.title(f"{ax[0]} vs {ax[1]}")
         plt.grid()
+        plt.savefig(f'CH{ch}_pulse/output/{ax[0]} vs {ax[1]}.png')
         plt.show()
         plt.cla()
         
         if input('exit[1]: ') == "1":
             exit()
 
-        picked = gp.pickSamples(df,*ax) # pick samples from graugh
+        output = f'CH{set["Config"]["channel"]}_pulse/output/select/img'
+        if not os.path.exists(output):
+            os.makedirs(output,exist_ok=True)
+        else:
+            shutil.rmtree(output)
+            os.mkdir(output)
+
+        picked = gp.pickSamples(df,*ax).tolist() # pick samples from graugh
         print(f"Selected {len((picked))} samples.")
+
 
         if len(picked) == 1:
             path_name = picked[0]
@@ -92,9 +98,10 @@ def main():
             gp.graugh(path_name,picked_data,time)
             plt.show()
         else:
-            print('Creating Average Pulse...')
+
             for i in picked:
                 data = gp.loadbi(i)
+                data = gp.BesselFilter(data,rate,fs = fs)
                 base,data = gp.baseline(data,presamples,1000,500)
                 name = os.path.splitext(os.path.basename(i))[0]
                 plt.plot(time,data)
@@ -105,17 +112,45 @@ def main():
                 plt.ylabel("volt(V)")
                 plt.savefig(f'CH{ch}_pulse/output/select/img/{name}.png')
                 plt.cla()
+                print(name)
 
-            av = gp.average_pulse(picked,presamples)
+            i = 0
+            while i == 0:
+                num = input("delete pulse number: ")
+                
+                try:
+                    picked.remove(f'CH{ch}_pulse/rawdata\\CH{ch}_{num}.dat')
+                    os.remove(f'CH{ch}_pulse/output/select/img/CH{ch}_{num}.png')
+                except:
+                    print("Not exist file")
+                i = int(input('finish [1], continue[0]'))
+
+            # create average pulse
+            print('Creating Average Pulse...')
+            array = []
+            for i in picked:
+                data = gp.loadbi(i)
+                data = gp.BesselFilter(data,rate,fs)
+                base,data = gp.baseline(data,presamples,1000,500)
+                array.append(data)
+            av = np.mean(array,axis=0)
+
+            plt.plot(time,av)
+            plt.xlabel("time(s)")
+            plt.ylabel("volt(V)")
+            plt.title("average pulse")
+            plt.savefig(f'CH{ch}_pulse/output/select/average_pulse.png')
+            plt.show()
+            np.savetxt(f'CH{ch}_pulse/output/select/selected_index.txt',picked,fmt="%s")
+            np.savetxt(f'CH{ch}_pulse/output/select/average_pulse.txt',av)
+            plt.cla()
             plt.plot(time,av)
             plt.xlabel("time(s)")
             plt.ylabel("volt(V)")
             plt.title("average pulse")
             plt.yscale('log')
-            plt.savefig(f'CH{ch}_pulse/output/select/average_pulse.png')
+            plt.savefig(f'CH{ch}_pulse/output/select/average_pulse_log.png')
             plt.show()
-            np.savetxt(f'CH{ch}_pulse/output/select/selected_index.txt',picked,fmt="%s")
-            np.savetxt(f'CH{ch}_pulse/output/select/average_pulse.txt',av)
     
     print('end')
 

@@ -10,11 +10,8 @@ import libs.getpara as gp
 
 def main():
     set = gp.loadJson()
-    path = set["Config"]["path"]
-    ch,rate,samples,presamples,threshold = \
-        set["Config"]["channel"],set["Config"]['rate'],set["Config"]['samples'],set["Config"]["presamples"],set["Config"]["threshold"]
-    time = np.arange(0,1/rate*samples,1/rate)
-
+    path = input('Path: ')
+    ch = input('Ch: ')
     data = input('pulse[0], noise[1]: ')
     if data == '0':
         os.chdir(f'{path}/CH{ch}_pulse/rawdata') 
