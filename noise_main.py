@@ -13,7 +13,7 @@ import shutil
 import libs.getpara as gp
 import pandas as pd
 
-cf = 4e4
+cf = 1e4
 
 #実行
 def main():

@@ -36,7 +36,7 @@ import json
 
 
 #-----Analtsis Parameter------------------------------------------------
-cf = 4e4        # Low Pass Filter cut off
+cf = 1e4        # Low Pass Filter cut off
 
 x_ba = 1000     # base start: presamples - x_ba
 w_ba = 500      # base width: presamples - x_ba + w_ba
@@ -54,6 +54,7 @@ width = 1000    #  start + width
 
 mv_av = 100     # 移動平均の幅
 decay_sillicon = 0.001 # コンイベント判別の為のディケイ
+
 #-----------------------------------------------------------------
 
 def monoExp(x,m,t):
@@ -86,10 +87,10 @@ if __name__ == '__main__':
             base,data = gp.baseline(data,presamples,x_ba,w_ba)
             if lpf == "1":
                 filt = gp.BesselFilter(data,rate,cf)
-            peak,peak_av,peak_index = gp.peak(data,presamples,w_max,x_av,w_av)
-            rise,rise_10,rise_90 = gp.risetime(data,peak_av,peak_index,rate)
+            peak,peak_av,peak_index = gp.peak(filt,presamples,w_max,x_av,w_av)
+            rise,rise_10,rise_90 = gp.risetime(filt,peak_av,peak_index,rate)
             
-            decay = gp.decaytime(data,peak_av,peak_index,rate)
+            decay = gp.decaytime(filt,peak_av,peak_index,rate)
 
             # not average for silicon event
             if decay < decay_sillicon:
@@ -100,12 +101,12 @@ if __name__ == '__main__':
 
                 p0 = [-1.6,12,presamples,5570,presamples]
                 x_fit = np.arange(presamples-5,samples,0.1)
-                popt,rSquared = gp.fitExp(gp.forthExp,data,presamples+start,width,p0 = [-1.6,12,presamples,5570,presamples,5000,presamples,5000,presamples])
+                popt,rSquared = gp.fitExp(gp.doubleExp,data,presamples+start,width,p0 = p0)
                 tau_rise = popt[1]/rate
                 tau_decay = popt[3]/rate
-                fit_double = gp.forthExp(x_fit,*popt)
+                fitting = gp.doubleExp(x_fit,*popt)
 
-                rise_fit = gp.risetime(fit_double,np.max(fit_double),np.argmax(fit_double),rate)
+                rise_fit = gp.risetime(fitting,np.max(fitting),np.argmax(fitting),rate)
                 data_column = [samples,base,peak_av,rise,decay,rise_fit[0],tau_rise,tau_decay,rSquared]
                 
             else:
@@ -157,7 +158,7 @@ if __name__ == '__main__':
         # Fitting
         x_fit = np.arange(presamples-10,samples,0.1)
         popt,rSquared = gp.fitExp(gp.forthExp,data,presamples-5,1000,[-1.6,12,presamples,5570,presamples,5000,presamples,5000,presamples])
-        fit_double = gp.forthExp(x_fit,*popt)
+        fitting = gp.forthExp(x_fit,*popt)
         tau_rise = popt[1]/rate
         tau_decay = popt[3]/rate
 
@@ -186,7 +187,7 @@ if __name__ == '__main__':
         plt.plot(time,data,'o',markersize=1,label="rawdata")
         plt.plot(time,filt,'o',markersize=1,label = "filt")
         plt.plot(time[presamples-x_ba:presamples-x_ba+w_ba],filt[presamples-x_ba:presamples-x_ba+w_ba],'--',label="base")
-        plt.plot(x_fit/rate,fit_double,'-.',label = 'fitting')
+        plt.plot(x_fit/rate,fitting,'-.',label = 'fitting')
 
         plt.vlines(time[rise_10],ymin=0,ymax=filt[rise_10],color = 'black',linestyle='-.')
         plt.vlines(time[rise_90],ymin=0,ymax=filt[rise_90],color = 'black',linestyle='-.')
@@ -203,8 +204,8 @@ if __name__ == '__main__':
         plt.show()
         plt.cla()
         # show diff pulse
-        #gp.graugh('diff pulse',dif,time[:samples-mv_av+1])
-        #plt.show()
+        gp.graugh('diff pulse',dif,time[:samples-mv_av+1])
+        plt.show()
 
         print("end")
         print('---------------------------\n')

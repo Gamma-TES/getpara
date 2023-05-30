@@ -27,8 +27,7 @@ ch,path = set["Config"]["channel"],set["Config"]["path"]
 rate,samples,presamples,threshold,ch = set["Config"]["rate"],set["Config"]["samples"],set["Config"]["presamples"],set["Config"]["threshold"],set["Config"]["channel"]
 os.chdir(path)
 df = pd.read_csv((f'CH{ch}_pulse/output/output.csv'),index_col=0)
-df = df[(df['samples']==samples)&(df['height']>threshold)&(df['decay']>0.01)&(df['rise_fit']!=0)&(df['rise_fit'] < 100)&(df['base']>0.0)\
-            &(df['rise_fit']<0.001)&(df['tau_decay']<10000)]
+df = df[(df['samples']==samples)&(df['height']>threshold)&(df['decay']>0.01)]
 pulseheight = df[x_ax]
 
 

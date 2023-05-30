@@ -50,7 +50,7 @@ def main():
     time = gp.data_time(rate,samples)
 
 
-    df = df[(df['samples']==samples)&(df['height']>threshold)&(df['base']>0.0)&(df['rSquared']>0.0)&(df['tau_rise']>0.0)&(df['tau_rise']<100.0)]
+    df = df[(df['samples']==samples)&(df['height']>threshold)&(df['base']>0.0)]
     print(f'Pulse : {len(df)} samples')
     #&(df['decay']>0.01)&(df['rise_fit']!=0)&(df['rise_fit'] < 100)&(df['base']>0.0)\&(df['rise_fit']<0.001)&(df['tau_decay']<10000)
     #&(df['decay']>0.001)&(df['rise']<0.0001)&(df['max_div']<0.01)&(df['decay']>0.01)
@@ -125,9 +125,10 @@ def main():
                 try:
                     picked.remove(f'CH{ch}_pulse/rawdata\\CH{ch}_{num}.dat')
                     os.remove(f'CH{ch}_pulse/output/select/img/CH{ch}_{num}.png')
+                    np.savetxt(f'CH{ch}_pulse/output/select/selected_index.txt',picked,fmt="%s")
                 except:
                     print("Not exist file")
-                
+
             
             
 
@@ -137,7 +138,7 @@ def main():
             for i in picked:
                 data = gp.loadbi(i)
                 filt = gp.BesselFilter(data,rate,fs)
-                base,data = gp.baseline(data,presamples,1000,500)
+                base,data = gp.baseline(filt,presamples,1000,500)
                 array.append(data)
             av = np.mean(array,axis=0)
 

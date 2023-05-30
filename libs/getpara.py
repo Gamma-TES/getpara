@@ -15,7 +15,7 @@ import re
 import json
 import warnings
 
-
+test_data='E:/matsumi/data/20230512/room2-2_140mK_870uA_gain10_trig0.4_500kHz/CH0_pulse/rawdata/CH0_4833.dat'
 
 
 #---解析プログラム作成------------------------------------------------------------
@@ -74,8 +74,6 @@ def loadIndex(path):
         for row in f.read().splitlines():
             index.append(row)
     return index
-
-
 
 
 
@@ -163,14 +161,6 @@ def silicon_event(decay_ab,decay_sil):
     else:
         return "absorb"
 
-
-#ダブルパルス除去（仮）
-def double_event(data,peak_index,rise_width,threshold):
-    for i in range(peak_index,int(len(data))-rise_width):
-        if data[i+rise_width]-data[i] >= threshold:
-            return "double"
-        else:
-            return "single"
 
 # LP Filter
 def BesselFilter(x,rate,fs):
@@ -488,3 +478,29 @@ def output(path,df):
             shutil.rmtree(path)
             os.makedirs(path)
             df.to_csv(os.path.join(path,"output.csv"))
+
+#ダブルパルス除去（仮）
+def double_event(data,threshold):
+    dif = diff(data)
+    cnt = 0
+    a = 1
+    while a == 1:
+        pre = np.max(dif[:len(dif)/2])
+        post = np.max(dif[len(dif)/2:])
+        if pre < threshold:
+            dif = dif[len(dif)/2:]
+        if post < threshold:
+            dif = dif[:len(dif)/2]
+
+            
+    plt.plot(dif)
+    plt.show()
+
+
+def main():
+    data = loadbi(test_data)
+    filt = BesselFilter(data,1e6,1e4)
+    double_event(filt,0.005)
+
+if __name__ == '__main__':
+    main()
