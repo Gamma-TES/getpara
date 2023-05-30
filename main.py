@@ -100,10 +100,10 @@ if __name__ == '__main__':
 
                 p0 = [-1.6,12,presamples,5570,presamples]
                 x_fit = np.arange(presamples-5,samples,0.1)
-                popt,rSquared = gp.fitting_double(data,presamples,start,width,p0)
-                tau_rise = popt[1]
-                tau_decay = popt[3]
-                fit_double = gp.doubleExp(x_fit,*popt)
+                popt,rSquared = gp.fitExp(gp.forthExp,data,presamples+start,width,p0 = [-1.6,12,presamples,5570,presamples,5000,presamples,5000,presamples])
+                tau_rise = popt[1]/rate
+                tau_decay = popt[3]/rate
+                fit_double = gp.forthExp(x_fit,*popt)
 
                 rise_fit = gp.risetime(fit_double,np.max(fit_double),np.argmax(fit_double),rate)
                 data_column = [samples,base,peak_av,rise,decay,rise_fit[0],tau_rise,tau_decay,rSquared]
@@ -155,20 +155,16 @@ if __name__ == '__main__':
         decay = gp.decaytime(filt,peak_av,peak_index,rate)
 
         # Fitting
-        m,t,rSquared,max_div = gp.fitting(data,peak_index,time,start_fit,width_fit,mode,p0 = [-14,70])
-        p0 = [-1.6,12,presamples,5570,presamples]
-        x_fit = np.arange(presamples-5,samples,0.1)
-        popt,rSquared_double = gp.fitting_double(data,presamples,start,width,p0)
-        fit_double = gp.doubleExp(x_fit,*popt)
-        peak_fit_index = np.argmax(fit_double)
-        
-        rise_fit = gp.risetime(fit_double,np.max(fit_double),np.argmax(fit_double),rate)
-        
+        x_fit = np.arange(presamples-10,samples,0.1)
+        popt,rSquared = gp.fitExp(gp.forthExp,data,presamples-5,1000,[-1.6,12,presamples,5570,presamples,5000,presamples,5000,presamples])
+        fit_double = gp.forthExp(x_fit,*popt)
+        tau_rise = popt[1]/rate
+        tau_decay = popt[3]/rate
 
         # not average for Silicon Event
         if decay < decay_sillicon:
             peak_av = peak
-            print("Seilicon Event")
+            print("Silicon Event")
         else:
             print('Absorver Event')
 
@@ -179,13 +175,12 @@ if __name__ == '__main__':
         print(f'base : {base:.5f}')
         print(f'hight : {peak_av:.5f}')
         print(f'peak index : {peak_index:.5f}')
-        print(f'rise : {rise}')
-        print(f'rise fit : {rise_fit[0]}')
-        print(f'decay : {decay}')
-        print(f'tauSec : {1/t}')
-        print('y = {0:.2f}[e^((x-{2:.2f})/{1:.2f}) + e^((x-{4:.2f})/{3:.2f})]'.format(*popt))
-        print(f"rSquared = {rSquared:.5f}")
-        print(f"max_div = {max_div:.5f}")
+        print(f'rise : {rise:.5f}')
+        print(f'tau_rise : {tau_rise:.5f}' )
+        print(f'decay : {decay:.5f}')
+        print(f'tau_decay : {tau_decay:.5f}' )
+        print(f'rSqared: {rSquared:.5f}')
+
 
         # Graugh
         plt.plot(time,data,'o',markersize=1,label="rawdata")

@@ -9,6 +9,7 @@ from scipy.optimize import curve_fit
 import libs.getpara as gp
 import libs.fft_spectrum as sp
 import json
+import warnings
 
 path = 'E:/matsumi/data/20230512/room2-2_140mK_870uA_gain10_trig0.4_500kHz/CH0_pulse/output/select'
 rawdata = 'average_pulse.txt'
@@ -17,6 +18,7 @@ samples = int(1e5)
 presamples = int(10000)
 time = np.arange(0,1/rate*samples,1/rate)
 
+warnings.simplefilter('ignore')
 
 #-----②解析パラメータ------------------------------------------------
 cf = 4e4        # Low Pass Filter cut off
@@ -34,13 +36,16 @@ start_rise = 0 # presamples + start_rise
 width_rise = 60 # start_rise + width_rise
 
 # decay
-start_decay = 2000 # peak_index + start_decay
-width_decay = 10000 # start_decay + width_decay
+start_decay = 3000 # peak_index + start_decay
+width_decay = 20000 # start_decay + width_decay
 
 # double
-start = -1      # presamples + start
+start = 0      # presamples + start
 width = 1000  #  start + width
-p0 = [-1.6,12,presamples,5570,presamples]
+p0_2 = [-1.6,12,presamples,5570,presamples]
+p0_3 = [-1.6,12,presamples,5570,presamples,5000,presamples]
+p0_4 = [-1.6,12,presamples,5570,presamples,5000,presamples,5000,presamples]
+p0_5 = [-1.6,12,presamples,5570,presamples,12,presamples,12,presamples]
 #-----------------------------------------------------------------
 
 # Fitting only rise or decay
@@ -66,8 +71,8 @@ def main():
     filt = gp.BesselFilter(data,rate,cf)
     peak,peak_av,peak_index = gp.peak(data,presamples,w_max,x_av,w_av)
 
-    x_fit = np.arange(presamples-5,samples,1)
-    x_fit_time = time[presamples-5:samples]
+    x_fit = np.arange(presamples-10,samples,1)
+    x_fit_time = time[presamples-10:samples]
     
 
     # rise
@@ -90,10 +95,25 @@ def main():
 
 
     x = np.arange(0,samples)
-    params_double,cov = curve_fit(doubleExp,\
-                                  x[presamples+start: presamples+start+width],data[presamples+start: presamples+start+width],p0=p0,maxfev=1000000)
+    params_double,cov = gp.fitExp(gp.doubleExp,data,presamples+start,width+10000,p0=p0_2)
     print(f"double:{params_double}")
     fit_double = doubleExp(x_fit,*params_double)
+
+    params_triple,cov = gp.fitExp(gp.tripleExp,data,presamples+start,width+10000,p0=p0_3)
+    print(f"triple:{params_triple}")
+    fit_triple = gp.tripleExp(x_fit,*params_triple)
+
+    params_forth,cov = gp.fitExp(gp.forthExp,data,presamples+start,width+30000,p0=p0_4)
+    print(f"forth:{params_forth}")
+    fit_forth = gp.forthExp(x_fit,*params_forth)
+
+    """
+    params_3_rise,cov = gp.fitExp(gp.tripleExp_rise,data,presamples+start,width+1000,p0=p0_5)
+    print(f"forth:{params_3_rise}")
+    fit_3_rise = gp.tripleExp_rise(x_fit,*params_3_rise)
+    """
+
+
 
     # rise time
     rise,rise_10,rise_90 = gp.risetime(data,peak_av,peak_index,rate)
@@ -104,17 +124,21 @@ def main():
     
 
 
-    plt.plot(time,data,'o',markersize=1,label = rawdata)
+    plt.plot(time,data,'o',markersize=2,label = rawdata)
     #plt.plot(x_fit_time,fit_rise,'-.',label = "rise fit")
     #plt.plot(x_fit_time,fit_decay,'-.',label = "decay fit")
     #plt.plot(x_fit_time,fit_sum,'--',label='sum fit ',c = 'purple')
     plt.plot(x_fit_time,fit_double,label = "double fit")
-    plt.title('{0:.2f}($e^{{(x-{2:.2f})/{1:.2f}}}$ - $e^{{(x-{4:.2f})/{3:.2f}}})$'.format(*params_double))
+    plt.plot(x_fit_time,fit_triple,label = "triple fit")
+    plt.plot(x_fit_time,fit_forth,label = "forth fit")
+    #plt.plot(x_fit_time,fit_3_rise,label = "forth fit")
+    #plt.title('{0:.2f}($e^{{(x-{2:.2f})/{1:.2f}}}$ - $e^{{(x-{4:.2f})/{3:.2f}}})$'.format(*params_double))
+    plt.title('Fitting')
     plt.xlabel("number")
     plt.ylabel('Volt [V]')
     plt.legend()
     plt.grid()
-    plt.yscale('log')
+    #plt.yscale('log')
     plt.show()
 
 if __name__ == '__main__':

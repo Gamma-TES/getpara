@@ -30,12 +30,15 @@ def main():
     # Load Setting 
     set = gp.loadJson()
     path,ch = set["Config"]["path"],set["Config"]["channel"]
+    samples,threshold = set['Config']["samples"],set['Config']['threshold']
     os.chdir(path)
 
     # Load data and transform histgrum
     df = pd.read_csv((f'CH{ch}_pulse/output/output.csv'),index_col=0)
-    data_index = gp.loadIndex(f'CH{ch}_pulse/output/select/selected_base_index.txt')
-    data = df.loc[data_index,"height_opt_temp"]
+    #df = df[(df['samples']==samples)&(df['height']>threshold)&(df['decay']>0.01)&(df['rise_fit']!=0)&(df['rise_fit'] < 100)&(df['base']>0.0)\
+    #        &(df['rise_fit']<0.001)&(df['tau_decay']<10000)]
+    #data_index = gp.loadIndex(f'CH{ch}_pulse/output/select/selected_base_index.txt')
+    data = df["height_opt_temp"]
     hist,bins = np.histogram(data,bins=bin,range=[0,np.max(data)*1.05])
 
     
@@ -93,3 +96,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+    print('end')

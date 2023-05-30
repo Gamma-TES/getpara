@@ -30,8 +30,10 @@ ax_unit = {
     "height_opt_temp":'pulse height opt temp',
     'rise':'rise[s]',
     'decay':'decay[s]',
-    'rise_fit':'rise_fit[s]'
-
+    'rise_fit':'rise_fit[s]',
+    'tau_rise':'tau_rise[s]',
+    'tau_decay':'tau_decay[s]',
+    'rSquared':'rSquared'
 }
 
 def main():
@@ -48,9 +50,9 @@ def main():
     time = gp.data_time(rate,samples)
 
 
-    df = df[(df['samples']==samples)&(df['height']>threshold)&(df['decay']>0.01)&(df['rise_fit']!=0)&(df['base']>0.0)]
+    df = df[(df['samples']==samples)&(df['height']>threshold)&(df['base']>0.0)&(df['rSquared']>0.0)&(df['tau_rise']>0.0)&(df['tau_rise']<100.0)]
     print(f'Pulse : {len(df)} samples')
-
+    #&(df['decay']>0.01)&(df['rise_fit']!=0)&(df['rise_fit'] < 100)&(df['base']>0.0)\&(df['rise_fit']<0.001)&(df['tau_decay']<10000)
     #&(df['decay']>0.001)&(df['rise']<0.0001)&(df['max_div']<0.01)&(df['decay']>0.01)
     #a = df.loc['CH0_pulse/rawdata\CH0_47388.dat']
     
@@ -68,7 +70,7 @@ def main():
 
     elif len(ax) == 2:
         x,y = gp.extruct(df,*ax)
-        plt.scatter(x,y,s=2,alpha=0.5)
+        plt.scatter(x,y,s=2,alpha=0.7)
         plt.xlabel(ax_unit[ax[0]])
         plt.ylabel(ax_unit[ax[1]])
         plt.title(f"{ax[0]} vs {ax[1]}")
@@ -105,7 +107,7 @@ def main():
                 base,data = gp.baseline(data,presamples,1000,500)
                 name = os.path.splitext(os.path.basename(i))[0]
                 plt.plot(time,data)
-                plt.xlim(0.009,0.0130)
+                #plt.xlim(0.009,0.0130)
                 plt.title(name)
                 #plt.yscale('log')
                 plt.xlabel("time(s)")
@@ -114,23 +116,27 @@ def main():
                 plt.cla()
                 print(name)
 
-            i = 0
-            while i == 0:
-                num = input("delete pulse number: ")
-                
+            np.savetxt(f'CH{ch}_pulse/output/select/selected_index.txt',picked,fmt="%s")
+
+            
+            num = 1
+            while num != 0:
+                num = int(input("delete pulse number (finish [0]): "))
                 try:
                     picked.remove(f'CH{ch}_pulse/rawdata\\CH{ch}_{num}.dat')
                     os.remove(f'CH{ch}_pulse/output/select/img/CH{ch}_{num}.png')
                 except:
                     print("Not exist file")
-                i = int(input('finish [1], continue[0]'))
+                
+            
+            
 
             # create average pulse
             print('Creating Average Pulse...')
             array = []
             for i in picked:
                 data = gp.loadbi(i)
-                data = gp.BesselFilter(data,rate,fs)
+                filt = gp.BesselFilter(data,rate,fs)
                 base,data = gp.baseline(data,presamples,1000,500)
                 array.append(data)
             av = np.mean(array,axis=0)
@@ -141,8 +147,7 @@ def main():
             plt.title("average pulse")
             plt.savefig(f'CH{ch}_pulse/output/select/average_pulse.png')
             plt.show()
-            np.savetxt(f'CH{ch}_pulse/output/select/selected_index.txt',picked,fmt="%s")
-            np.savetxt(f'CH{ch}_pulse/output/select/average_pulse.txt',av)
+
             plt.cla()
             plt.plot(time,av)
             plt.xlabel("time(s)")
@@ -151,6 +156,8 @@ def main():
             plt.yscale('log')
             plt.savefig(f'CH{ch}_pulse/output/select/average_pulse_log.png')
             plt.show()
+
+            np.savetxt(f'CH{ch}_pulse/output/select/average_pulse.txt',av)
     
     print('end')
 

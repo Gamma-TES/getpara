@@ -20,15 +20,27 @@ import pandas as pd
 
 #-------------- ガウスフィッティング ----------------
 x_ax = "height_opt_temp"
+bins = 4096
 
 set = gp.loadJson()
 ch,path = set["Config"]["channel"],set["Config"]["path"]
+rate,samples,presamples,threshold,ch = set["Config"]["rate"],set["Config"]["samples"],set["Config"]["presamples"],set["Config"]["threshold"],set["Config"]["channel"]
 os.chdir(path)
 df = pd.read_csv((f'CH{ch}_pulse/output/output.csv'),index_col=0)
-pulseheight = np.array(gp.extruct(df,x_ax))[0]
-print(pulseheight)
+df = df[(df['samples']==samples)&(df['height']>threshold)&(df['decay']>0.01)&(df['rise_fit']!=0)&(df['rise_fit'] < 100)&(df['base']>0.0)\
+            &(df['rise_fit']<0.001)&(df['tau_decay']<10000)]
+pulseheight = df[x_ax]
 
 
+plt.hist(pulseheight,bins=bins, range=[0,np.max(pulseheight)*1.05])
+plt.xlabel('Pulse Height [ch]')
+plt.ylabel('Counts')
+plt.tick_params(axis='both', which='both', direction='in',
+				bottom=True, top=True, left=True, right=True)
+plt.grid(True, which='major', color='black', linestyle='-', linewidth=0.2)
+plt.grid(True, which='minor', color='black', linestyle=':', linewidth=0.1)
+plt.savefig(f'CH{ch}_pulse/output/select/histgrum.png')
+plt.show()
 
 energy = float(input('エネルギー(keV)を入れてください:'))
 
