@@ -75,8 +75,17 @@ def loadIndex(path):
             index.append(row)
     return index
 
-
-
+def select_condition(df,set):
+    for i in set['select']:
+        param,sym = i.split('-')
+        if sym == '>':
+            df = df[df[param] > set['select'][i]]
+        elif sym == '<':
+            df = df[df[param] < set['select'][i]]
+        elif sym == '=':
+            df = df[df[param] == set['select'][i]]
+    return df
+ 
 
 def data_time(rate,samples):
     return  np.arange(0,1/rate*samples,1/rate)
@@ -151,7 +160,7 @@ def decaytime(data,peak,peak_index,rate):
     #decay_90 = np.argmax(data[peak_index:]<=peak*0.9)
     #decay_10 = np.argmax(data[peak_index:]<=peak*0.1)
     decay = (decay_10-decay_90)/rate
-    return decay
+    return decay,decay_10,decay_90
 
 
 #シリコンイベント弁別

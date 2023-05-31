@@ -6,12 +6,13 @@ import libs.getpara as gp
 import sys
 import shutil
 import pprint
+import json
 
 # main.py　の後　output.csv　を用いる
 # 見たい関係性のパラメータをプロット（risetime vs pulseheight など）
 # プロットから平均パルスを作成
 
-fs = 4e4
+
 
 #平均パルスを作成
 def average_pulse(index,presamples):
@@ -36,25 +37,39 @@ ax_unit = {
     'rSquared':'rSquared'
 }
 
+para = {'select':{
+
+}}
+
 def main():
+
     ax = sys.argv
     ax.pop(0)
     set = gp.loadJson()
-    pprint.pprint(set)
+    if not 'select' in set:
+        set.update(para)
+        jsn = json.dumps(set,indent=4)
+        with open("setting.json", 'w') as file:
+            file.write(jsn)
+
     os.chdir(set["Config"]["path"])
 
     
-
     df = pd.read_csv((f'CH{set["Config"]["channel"]}_pulse/output/output.csv'),index_col=0)
     rate,samples,presamples,threshold,ch = set["Config"]["rate"],set["Config"]["samples"],set["Config"]["presamples"],set["Config"]["threshold"],set["Config"]["channel"]
     time = gp.data_time(rate,samples)
 
+    # default select
+    df = df[(df['samples']==samples)&(df['height']>threshold)&(df['rise_fit']!=0)]
 
-    df = df[(df['samples']==samples)&(df['height']>threshold)&(df['base']>0.0)]
+    # manual select
+    df = gp.select_condition(df,set)
+    
     print(f'Pulse : {len(df)} samples')
     #&(df['decay']>0.01)&(df['rise_fit']!=0)&(df['rise_fit'] < 100)&(df['base']>0.0)\&(df['rise_fit']<0.001)&(df['tau_decay']<10000)
     #&(df['decay']>0.001)&(df['rise']<0.0001)&(df['max_div']<0.01)&(df['decay']>0.01)
     #a = df.loc['CH0_pulse/rawdata\CH0_47388.dat']
+    
     
 
     #平均パルスを取得
@@ -103,7 +118,7 @@ def main():
 
             for i in picked:
                 data = gp.loadbi(i)
-                data = gp.BesselFilter(data,rate,fs = fs)
+                data = gp.BesselFilter(data,rate,fs = set['main']['cutoff'])
                 base,data = gp.baseline(data,presamples,1000,500)
                 name = os.path.splitext(os.path.basename(i))[0]
                 plt.plot(time,data)
@@ -137,7 +152,7 @@ def main():
             array = []
             for i in picked:
                 data = gp.loadbi(i)
-                filt = gp.BesselFilter(data,rate,fs)
+                filt = gp.BesselFilter(data,rate,set['main']['cutoff'])
                 base,data = gp.baseline(filt,presamples,1000,500)
                 array.append(data)
             av = np.mean(array,axis=0)

@@ -12,6 +12,7 @@ def hanning(data,samples):
     data = data*han
     return data,acf  
 
+
 def BesselFilter(x,rate,fs):
     fn = rate/2
     ws = fs/fn
