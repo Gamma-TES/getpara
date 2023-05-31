@@ -77,26 +77,21 @@ if __name__ == '__main__':
 
     # All Samples
     if mode == '0':
-        fit = input('fitting? [1]): ')
         data_array = []
         for num in path_data:
             print(os.path.basename(num))
             data = gp.loadbi(num)
             base,data = gp.baseline(data,presamples,para['main']['base_x'],para['main']['base_w'])
 
-            # fitting
-            if fit == '1':
-                p0 = [-1.6,12,presamples,5570,presamples]
-                x_fit = np.arange(presamples-5,samples,0.1)
-                popt,rSquared = gp.fitExp(gp.doubleExp,data,presamples+para['main']['fit_x'],para['main']['fit_w'],p0 = para['main']['fit_p0'])
-                tau_rise = popt[1]/rate
-                tau_decay = popt[3]/rate
-                fitting = gp.doubleExp(x_fit,*popt)
-                rise_fit = gp.risetime(fitting,np.max(fitting),np.argmax(fitting),rate)
+            
+            p0 = [-1.6,12,presamples,5570,presamples]
+            x_fit = np.arange(presamples-5,samples,0.1)
+            popt,rSquared = gp.fitExp(gp.doubleExp,data,presamples+para['main']['fit_x'],para['main']['fit_w'],p0 = para['main']['fit_p0'])
+            tau_rise = popt[1]/rate
+            tau_decay = popt[3]/rate
+            fitting = gp.doubleExp(x_fit,*popt)
+            rise_fit = gp.risetime(fitting,np.max(fitting),np.argmax(fitting),rate)
 
-                fit_column = [rise_fit[0],tau_rise,tau_decay,rSquared]
-            else:
-                fit_column = []
 
             # Low pass filter
             data = gp.BesselFilter(data,rate,para['main']['cutoff'])
@@ -106,18 +101,14 @@ if __name__ == '__main__':
             rise,rise_10,rise_90 = gp.risetime(data,peak_av,peak_index,rate)
             decay,decay_10,decay_90 = gp.decaytime(data,peak_av,peak_index,rate)
             
-            data_column = [samples,base,peak_av,rise,decay]
-            data_array.append(data_column.append(fit_column))
-
+            data_column = [samples,base,peak_av,rise,decay,rise_fit[0],tau_rise,tau_decay,rSquared]
+            data_array.append(data_column)
+        
         # create pandas DataFrame
-        if fit == "1":
-            df = pd.DataFrame(data_array,\
-            columns=["samples","base","height","rise","decay","rise_fit",'tau_rise','tau_decay',"rSquared"],\
-            index=path)
-        else:
-            df = pd.DataFrame(data_array,\
-            columns=["samples","base","height","rise","decay"],\
-            index=path)
+        df = pd.DataFrame(data_array,\
+        columns=["samples","base","height","rise","decay","rise_fit",'tau_rise','tau_decay',"rSquared"],\
+        index=path_data)
+
 
         # output
         output = (f'CH{ch}_pulse/output')
