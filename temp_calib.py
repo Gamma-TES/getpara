@@ -21,9 +21,7 @@ p0=[0.01,0.01,0.01,0.01,0.01,0.01]
 # Plot xlim range
 
 cal_range = [1.0,1.6]
-min_base = -0.5
-max_base = 2.0
-     
+
 
 
 
@@ -50,7 +48,6 @@ def Calibration(x,params):
 def PlotFitting(x,y,x_fit,y_fit):
 	plt.plot(x,y,'o',color='blue',markersize=3,label='a')
 	plt.plot(x_fit,y_fit,color='red',linewidth=1.0,linestyle='-')
-	plt.xlim(min_base,max_base)
 	plt.xlabel('baseline [V]',fontsize = 16)
 	plt.ylabel('pulseheight [V]',fontsize = 16)
 	plt.grid()
@@ -60,8 +57,6 @@ def PlotFitting(x,y,x_fit,y_fit):
 def PlotCalibration(x1,y1,x2,y2):
 	plt.plot(x1,y1,'o',color='tab:blue',markersize=0.7,label='a')
 	plt.plot(x2,y2,'o',color='tab:red',markersize=0.7,label='a')
-	plt.xlim(cal_range)
-	plt.ylim(0,2)
 	plt.xlabel('baseline [V]',fontsize = 16)
 	plt.ylabel('pulseheight [V]',fontsize = 16)
 	plt.grid()
@@ -84,39 +79,28 @@ def main():
 	os.chdir(path) 
 	df = pd.read_csv((f'CH{ch}_pulse/output/output.csv'),index_col=0)
 	x,y = gp.extruct(df,"base","height_opt")
-	plt.scatter(x,y,s=1)
-	plt.xlabel("base")
-	plt.ylabel("height_opt")
-	plt.grid()
-	plt.show()
-	min_base = float(input("base min: "))
-	max_base = float(input("base max: "))
-	df_sel = df[(df['base'] < max_base) & (df['base'] > min_base) & (df['height_opt'] > 0)]
+
+
+	df_sel = gp.select_condition(df,set)
+	print(df_sel)
 	picked = gp.pickSamples(df_sel,"base","height_opt") 
 	baseline = df_sel.loc[picked,"base"]
 	pulseheight = df_sel.loc[picked,"height_opt"]
 	print(f"Selected {len(picked)} Samples.")
-	np.savetxt(f'CH{ch}_pulse/output/select/selected_base_index.txt',df_sel.index.values,fmt="%s")
 	
 	#Fitting
 	popt,pcov = curve_fit(func,baseline,pulseheight,p0)
-	x_fit = np.linspace(min_base,max_base,100000)
+	x_fit = np.linspace(set['select']['base->'],set['select']['base-<'],100000)
 	fitted = func(x_fit,*tuple(popt))
 	PlotFitting(baseline,pulseheight,x_fit,fitted)        
 
 	#Calibration
 	st = np.mean(pulseheight)
-	pulseheight_cal = np.zeros(len(df))
+	pulseheight_cal = np.zeros(len(df_sel))
 
-	i = 0
-	for base,height in zip(df["base"],df["height_opt"]):
-		if base > cal_range[0] and base < cal_range[1]:
-			pulseheight_cal[i] = height/Calibration(base,popt)
-		else:
-			pulseheight_cal[i] = 0
-		i+=1
-	pulseheight_cal = pulseheight_cal*st
-	df["height_opt_temp"] = pulseheight_cal
+
+	for index,row in df_sel.iterrows():
+		row["height_opt_temp"] = row['height_opt']/Calibration(row['base'],popt)*st
 
 	PlotCalibration(df["base"],df["height_opt_temp"],df.loc[picked,"base"],df.loc[picked,"height_opt_temp"])
 	np.savetxt(f'CH{ch}_pulse/output/select/pulseheight_opt_temp.txt',pulseheight_cal)

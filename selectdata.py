@@ -37,15 +37,21 @@ ax_unit = {
     'rSquared':'rSquared'
 }
 
-para = {'select':{
 
-}}
 
 def main():
 
     ax = sys.argv
     ax.pop(0)
     set = gp.loadJson()
+
+    # default condition
+    para = {'select':{
+    'samples-=':set['Config']['samples'],
+    'height->':set['Config']['threshold'],
+    'rSquared->':0,
+    }}
+
     if not 'select' in set:
         set.update(para)
         jsn = json.dumps(set,indent=4)
@@ -58,9 +64,6 @@ def main():
     df = pd.read_csv((f'CH{set["Config"]["channel"]}_pulse/output/output.csv'),index_col=0)
     rate,samples,presamples,threshold,ch = set["Config"]["rate"],set["Config"]["samples"],set["Config"]["presamples"],set["Config"]["threshold"],set["Config"]["channel"]
     time = gp.data_time(rate,samples)
-
-    # default select
-    df = df[(df['samples']==samples)&(df['height']>threshold)&(df['rise_fit']!=0)]
 
     # manual select
     df = gp.select_condition(df,set)
