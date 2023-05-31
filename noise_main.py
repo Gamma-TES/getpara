@@ -12,18 +12,25 @@ import glob
 import shutil
 import libs.getpara as gp
 import pandas as pd
+import json
 
-cf = 1e4
 
 #実行
 def main():
     set = gp.loadJson()
+    if not 'eta' in set['Config']:
+        eta = input("eta: ")
+        set['Config']['eta'] = float(eta)
+        jsn = json.dumps(set,indent=4)
+        with open("setting.json", 'w') as file:
+            file.write(jsn) 
     os.chdir(set["Config"]["path"])
     ch = set['Config']['channel']
     rate,samples= set["Config"]["rate"],set["Config"]["samples"]
     time = gp.data_time(rate,samples)
     fq = np.arange(0,rate,rate/samples)
-    eta = input("eta: ")
+
+    
     noise = []
     model = np.array(0)*samples
     
@@ -36,12 +43,11 @@ def main():
     
     noise = natsorted(glob.glob(f"CH{ch}_noize/rawdata/CH{ch}_*.dat"))
 
-    lpf = input('Low Pass Filter? [1]): ')
+
     for i in noise:
         try :
             data = gp.loadbi(i)
-            if lpf == '1':
-                data = gp.BesselFilter(data,rate,cf)
+            data = gp.BesselFilter(data,rate,set['main']['cutoff'])
             base,data_ba = gp.baseline(data,set['Config']['presamples'],1000,500)
             peak = np.max(data_ba)
             if (base <= -3 and base >= 3) or peak >= float(set['Config']['threshold']):
@@ -55,7 +61,7 @@ def main():
             continue
     model = model/len(noise)
 
-    amp_spe = np.sqrt(model[:int(samples/2)+1])*int(eta)*1e+6*np.sqrt(1/rate/samples)
+    amp_spe = np.sqrt(model[:int(samples/2)+1])*int(set['Config']['eta'])*1e+6*np.sqrt(1/rate/samples)
 
     os.mkdir(f'CH{ch}_noize/output')
     np.savetxt(f'CH{ch}_noize/output/modelnoise.txt',model)

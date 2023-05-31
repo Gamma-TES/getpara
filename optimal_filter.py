@@ -53,7 +53,7 @@ def main():
     plt.show()
 
     #LowPassFilter
-    F2 = F#lowpass(F,fq,cf)
+    F2 = lowpass(F,fq,set['main']['cutoff'])
     amp_filt = np.abs(F2)
     amp_spe_filt = np.sqrt(amp_filt)*int(eta)*1e+6*np.sqrt(1/rate/samples)
     sp.graugh_spe(fq[:int(samples/2)+1],amp_spe_filt[:int(samples/2)+1])
@@ -81,8 +81,6 @@ def main():
     np.savetxt(os.path.join(path_output,'pulseheight_opt.txt'),pulsehight_array)
     df["height_opt"] = pulsehight_array
     df.to_csv(f"CH{ch}_pulse/output/output.csv")
-
-
 
 
 if __name__ == "__main__":
