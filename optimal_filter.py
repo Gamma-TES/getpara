@@ -38,10 +38,10 @@ def main():
 
     #outputファイルを読み込み
     df  = pd.read_csv(f"CH{ch}_pulse/output/output.csv",index_col=0)
-    
+    df_sel = gp.select_condition(df,set)
 
-    eta = input("eta: ")
-    #cf = int(input("cut off (kHz): ")) * 1000
+    eta = set['Config']['eta']
+    cf = set['main']['cutoff']
 
     #Fourier transform
     F = fft.fft(pulse_av)
@@ -53,7 +53,7 @@ def main():
     plt.show()
 
     #LowPassFilter
-    F2 = lowpass(F,fq,set['main']['cutoff'])
+    F2 = lowpass(F,fq,cf)
     amp_filt = np.abs(F2)
     amp_spe_filt = np.sqrt(amp_filt)*int(eta)*1e+6*np.sqrt(1/rate/samples)
     sp.graugh_spe(fq[:int(samples/2)+1],amp_spe_filt[:int(samples/2)+1])
@@ -68,10 +68,10 @@ def main():
 
     pulsehight_array = []
     #最適フィルタ適用
-    for i in df.index:
-        print(i)
-        data = gp.loadbi(i)
-        base = df.at[i,"base"]
+    for index,row in df_sel.iterrows():
+        print(index)
+        data = gp.loadbi(index)
+        base = df.at[index,"base"]
         data = data-base
         data = gp.BesselFilter(data,rate,fs)
         pulsehight = np.sum(data*filt)
