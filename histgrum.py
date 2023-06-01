@@ -15,14 +15,15 @@ def main():
     # Load Setting 
     set = gp.loadJson()
     path,ch = set["Config"]["path"],set["Config"]["channel"]
+    output = f'CH{set["Config"]["channel"]}_pulse/output/{set["Config"]["output"]}'
     os.chdir(path)
 
     jsn = json.dumps(set,indent=4)
-    with open(f'CH{ch}_pulse/output/setting.json', 'w') as file:
+    with open(f'{output}/setting.json', 'w') as file:
         file.write(jsn)
 
     # Load data and transform histgrum
-    df = pd.read_csv((f'CH{ch}_pulse/output/output.csv'),index_col=0)
+    df = pd.read_csv((f'{output}/output.csv'),index_col=0)
     df = gp.select_condition(df,set)
     data = df["height_opt_temp"]
     hist,bins = np.histogram(data,bins=BIN,range=[0,np.max(data)*1.05])
@@ -34,7 +35,7 @@ def main():
                     bottom=True, top=True, left=True, right=True)
     plt.grid(True, which='major', color='black', linestyle='-', linewidth=0.2)
     plt.grid(True, which='minor', color='black', linestyle=':', linewidth=0.1)
-    plt.savefig(f'CH{ch}_pulse/output/select/histgrum.png')
+    plt.savefig(f'{output}/select/histgrum.png')
     plt.show()
 
 

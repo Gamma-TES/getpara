@@ -9,6 +9,7 @@ import sys
 import os
 import pandas as pd
 import libs.getpara as gp
+import json
 
 # Give textfile name as argment when you run this python file.
 # ex)
@@ -18,16 +19,7 @@ import libs.getpara as gp
 # pO is initialize parameter to fitting polynomial.
 # Make sure the (length of p0 - 1) is the degree of the polynomial.
 p0=[0.01,0.01,0.01,0.01,0.01,0.01]
-# Plot xlim range
 
-cal_range = [1.0,1.6]
-
-
-
-
-
-
-#Investigate Which plot is in area sellected or out.
 
 def func(X, *params):
     Y = np.zeros_like(X)
@@ -76,16 +68,29 @@ def main():
 	
 	set = gp.loadJson()
 	ch,path = set["Config"]["channel"],set["Config"]["path"]
+	output = f'CH{set["Config"]["channel"]}_pulse/output/{set["Config"]["output"]}'
+
+	if (not 'base->' in set['select'])or(not 'base-<' in set['select']):
+		base_min = float(input("base > : "))
+		base_max = float(input("base < : "))
+		set['select']['base->'] = base_min
+		set['select']['base-<'] = base_max
+		jsn = json.dumps(set,indent=4)
+		with open("setting.json", 'w') as file:
+			file.write(jsn)
+	
 	os.chdir(path) 
-	df = pd.read_csv((f'CH{ch}_pulse/output/output.csv'),index_col=0)
+	df = pd.read_csv((f'{output}/output.csv'),index_col=0)
 	x,y = gp.extruct(df,"base","height_opt")
 
 
 	df_sel = gp.select_condition(df,set)
-	print(df_sel)
+	
 	picked = gp.pickSamples(df_sel,"base","height_opt") 
 	baseline = df_sel.loc[picked,"base"]
 	pulseheight = df_sel.loc[picked,"height_opt"]
+	
+		
 	print(f"Selected {len(picked)} Samples.")
 	
 	#Fitting
@@ -103,8 +108,7 @@ def main():
 		df.at[index,"height_opt_temp"] = row['height_opt']/Calibration(row['base'],popt)*st
 
 	PlotCalibration(df["base"],df["height_opt_temp"],df.loc[picked,"base"],df.loc[picked,"height_opt_temp"])
-	np.savetxt(f'CH{ch}_pulse/output/select/pulseheight_opt_temp.txt',pulseheight_cal)
-	df.to_csv(f'CH{ch}_pulse/output/output.csv')
+	df.to_csv(f'{output}/output.csv')
 
 if __name__ == '__main__':
 	main()

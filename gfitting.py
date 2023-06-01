@@ -27,9 +27,10 @@ def gausse(x,A,mu,sigma):
 def main():
 	set = gp.loadJson()
 	ch,path = set["Config"]["channel"],set["Config"]["path"]
-	rate,samples,presamples,threshold,ch = set["Config"]["rate"],set["Config"]["samples"],set["Config"]["presamples"],set["Config"]["threshold"],set["Config"]["channel"]
+	output = f'CH{set["Config"]["channel"]}_pulse/output/{set["Config"]["output"]}'
+	
 	os.chdir(path)
-	df = pd.read_csv((f'CH{ch}_pulse/output/output.csv'),index_col=0)
+	df = pd.read_csv((f'{output}/output.csv'),index_col=0)
 	df = gp.select_condition(df,set)
 	energy = float(input('input Energy(keV): '))
 	min = float(input('min: '))
@@ -58,7 +59,7 @@ def main():
 	plt.tick_params(axis='both', which='both', direction='in',\
                     bottom=True, top=True, left=True, right=True)
 	plt.grid(True, which='major', color='black', linestyle='-', linewidth=0.2)
-	plt.savefig(f'CH{ch}_pulse/output/select/E_resolution_{energy}.png')
+	plt.savefig(f'{output}/select/E_resolution_{energy}.png')
 	plt.show()
 
 

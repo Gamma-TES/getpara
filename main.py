@@ -39,7 +39,6 @@ import pprint
 #-----Analtsis Parameter------------------------------------------------
 
 para = {"main":{
-    'cutoff':1e4,
     'base_x':1000,
     'base_w':500,
     'peak_max':300,
@@ -68,11 +67,17 @@ if __name__ == '__main__':
     ch,rate,samples,presamples,threshold = \
         set["Config"]["channel"],set["Config"]['rate'],set["Config"]['samples'],set["Config"]["presamples"],set["Config"]["threshold"]
     time = np.arange(0,1/rate*samples,1/rate)
+    if not 'cutoff' in set['main']:
+        cutoff = input("cutoff: ")
+        set['main']['cutoff'] = float(cutoff)
+        jsn = json.dumps(set,indent=4)
+        with open("setting.json", 'w') as file:
+            file.write(jsn) 
     os.chdir(path) 
 
     path_data = natsorted(glob.glob(f'CH{ch}_pulse/rawdata/CH{ch}_*.dat'))
     #path = natsorted(glob.glob(f'CH{ch}_pulse/test/CH{ch}_*.dat'))
-
+    
     mode = input('Analysis Mode (all -> [0], one -> [1]): ')
 
     # All Samples
@@ -81,12 +86,12 @@ if __name__ == '__main__':
         for num in path_data:
             print(os.path.basename(num))
             data = gp.loadbi(num)
-            base,data = gp.baseline(data,presamples,para['main']['base_x'],para['main']['base_w'])
+            base,data = gp.baseline(data,presamples,set['main']['base_x'],set['main']['base_w'])
 
             
             p0 = [-1.6,12,presamples,5570,presamples]
             x_fit = np.arange(presamples-5,samples,0.1)
-            popt,rSquared = gp.fitExp(gp.doubleExp,data,presamples+para['main']['fit_x'],para['main']['fit_w'],p0 = para['main']['fit_p0'])
+            popt,rSquared = gp.fitExp(gp.doubleExp,data,presamples+set['main']['fit_x'],set['main']['fit_w'],p0 = set['main']['fit_p0'])
             tau_rise = popt[1]/rate
             tau_decay = popt[3]/rate
             fitting = gp.doubleExp(x_fit,*popt)
@@ -94,10 +99,10 @@ if __name__ == '__main__':
 
 
             # Low pass filter
-            data = gp.BesselFilter(data,rate,para['main']['cutoff'])
+            data = gp.BesselFilter(data,rate,set['main']['cutoff'])
             
             # analysis
-            peak,peak_av,peak_index = gp.peak(data,presamples,para['main']['peak_max'],para['main']['peak_x'],para['main']['peak_w'])
+            peak,peak_av,peak_index = gp.peak(data,presamples,set['main']['peak_max'],set['main']['peak_x'],set['main']['peak_w'])
             rise,rise_10,rise_90 = gp.risetime(data,peak_av,peak_index,rate)
             decay,decay_10,decay_90 = gp.decaytime(data,peak_av,peak_index,rate)
             
@@ -111,7 +116,7 @@ if __name__ == '__main__':
 
 
         # output
-        output = (f'CH{ch}_pulse/output')
+        output = f'CH{ch}_pulse/output/{set["Config"]["output"]}'
         if not os.path.exists(output):
             os.makedirs(output,exist_ok=True)
             df.to_csv(os.path.join(output,"output.csv"))
@@ -131,20 +136,20 @@ if __name__ == '__main__':
         data = gp.loadbi(path)
 
         # Processing
-        base,data = gp.baseline(data,presamples,para['main']['base_x'],para['main']['base_w'])
-        mv = gp.moving_average(data,para['main']['mv_w'])
+        base,data = gp.baseline(data,presamples,set['main']['base_x'],set['main']['base_w'])
+        mv = gp.moving_average(data,set['main']['mv_w'])
         dif  = gp.diff(mv)
-        filt = gp.BesselFilter(data,rate,para['main']['cutoff'])
+        filt = gp.BesselFilter(data,rate,set['main']['cutoff'])
 
         # Analysis
-        peak,peak_av,peak_index = gp.peak(data,presamples,para['main']['peak_max'],para['main']['peak_x'],para['main']['peak_w'])
+        peak,peak_av,peak_index = gp.peak(data,presamples,set['main']['peak_max'],set['main']['peak_x'],set['main']['peak_w'])
         rise,rise_10,rise_90 = gp.risetime(data,peak_av,peak_index,rate)
         decay,decay_10,decay_90 = gp.decaytime(data,peak_av,peak_index,rate)
 
         # Fitting
         p0 = [-1.6,12,presamples,5570,presamples]
         x_fit = np.arange(presamples-5,samples,0.1)
-        popt,rSquared = gp.fitExp(gp.doubleExp,data,presamples+para['main']['fit_x'],para['main']['fit_w'],p0 = para['main']['fit_p0'])
+        popt,rSquared = gp.fitExp(gp.doubleExp,data,presamples+set['main']['fit_x'],set['main']['fit_w'],p0 = set['main']['fit_p0'])
         tau_rise = popt[1]/rate
         tau_decay = popt[3]/rate
         fitting = gp.doubleExp(x_fit,*popt)
@@ -169,7 +174,7 @@ if __name__ == '__main__':
         # Graugh
         plt.plot(time,data,'o',markersize=1,label="rawdata")
         plt.plot(time,filt,'o',markersize=1,label = "filt")
-        plt.plot(time[presamples-para['main']['base_x']:presamples-para['main']['base_x']+para['main']['base_w']],filt[presamples-para['main']['base_x']:presamples-para['main']['base_x']+para['main']['base_w']],'--',label="base")
+        plt.plot(time[presamples-set['main']['base_x']:presamples-set['main']['base_x']+set['main']['base_w']],filt[presamples-set['main']['base_x']:presamples-set['main']['base_x']+set['main']['base_w']],'--',label="base")
         plt.plot(x_fit/rate,fitting,'-.',label = 'fitting')
 
         plt.vlines(time[rise_10],ymin=0,ymax=filt[rise_10],color = 'black',linestyle='-.')
@@ -187,7 +192,7 @@ if __name__ == '__main__':
         plt.show()
         plt.cla()
         # show diff pulse
-        gp.graugh('diff pulse',dif,time[:samples-para['main']['mv_w']+1])
+        gp.graugh('diff pulse',dif,time[:samples-set['main']['mv_w']+1])
         plt.show()
 
         print("end")

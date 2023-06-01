@@ -29,6 +29,7 @@ def main():
     rate,samples= set["Config"]["rate"],set["Config"]["samples"]
     time = gp.data_time(rate,samples)
     fq = np.arange(0,rate,rate/samples)
+    output = f'CH{set["Config"]["channel"]}_noise/output/{set["Config"]["output"]}'
 
     
     noise = []
@@ -41,7 +42,7 @@ def main():
                 for row in f.read().splitlines():
                     noise.append(row)
     
-    noise = natsorted(glob.glob(f"CH{ch}_noize/rawdata/CH{ch}_*.dat"))
+    noise = natsorted(glob.glob(f"CH{ch}_noise/rawdata/CH{ch}_*.dat"))
 
 
     for i in noise:
@@ -63,8 +64,8 @@ def main():
 
     amp_spe = np.sqrt(model[:int(samples/2)+1])*int(set['Config']['eta'])*1e+6*np.sqrt(1/rate/samples)
 
-    os.mkdir(f'CH{ch}_noize/output')
-    np.savetxt(f'CH{ch}_noize/output/modelnoise.txt',model)
+    os.makedirs(output)
+    np.savetxt(f'{output}/modelnoise.txt',model)
     
     
 
@@ -74,7 +75,7 @@ def main():
     plt.xlabel('Frequency[Hz]')
     plt.ylabel('Intensity[pA/kHz$^{1/2}$]')
     plt.grid()
-    plt.savefig(f'CH{ch}_noize/output/modelnoise.png')
+    plt.savefig(f'{output}/modelnoise.png')
     plt.show()
 
 if __name__ == "__main__":

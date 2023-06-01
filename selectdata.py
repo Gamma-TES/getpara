@@ -60,10 +60,11 @@ def main():
 
     os.chdir(set["Config"]["path"])
 
-    
-    df = pd.read_csv((f'CH{set["Config"]["channel"]}_pulse/output/output.csv'),index_col=0)
+    output = f'CH{set["Config"]["channel"]}_pulse/output/{set["Config"]["output"]}'
+    df = pd.read_csv((f'{output}/output.csv'),index_col=0)
     rate,samples,presamples,threshold,ch = set["Config"]["rate"],set["Config"]["samples"],set["Config"]["presamples"],set["Config"]["threshold"],set["Config"]["channel"]
     time = gp.data_time(rate,samples)
+    
 
     # manual select
     df = gp.select_condition(df,set)
@@ -75,14 +76,14 @@ def main():
     
     
 
-    #平均パルスを取得
+    # time vs ax
     if len(ax) == 1:
         y = gp.extruct(df,ax)
         x = np.arange(len(y[0]))
         plt.scatter(x,y[0],s=0.4)
         plt.xlabel("data number")
         plt.ylabel(ax_unit[ax[0]])
-        plt.savefig(f'CH{ch}_pulse/output/{ax[0]}.png')
+        plt.savefig(f'{output}/{ax[0]}.png')
         plt.show()
 
 
@@ -93,19 +94,19 @@ def main():
         plt.ylabel(ax_unit[ax[1]])
         plt.title(f"{ax[0]} vs {ax[1]}")
         plt.grid()
-        plt.savefig(f'CH{ch}_pulse/output/{ax[0]} vs {ax[1]}.png')
+        plt.savefig(f'{output}/{ax[0]} vs {ax[1]}.png')
         plt.show()
         plt.cla()
         
         if input('exit[1]: ') == "1":
             exit()
 
-        output = f'CH{set["Config"]["channel"]}_pulse/output/select/img'
-        if not os.path.exists(output):
-            os.makedirs(output,exist_ok=True)
+        output_f = f'{output}/select/img'
+        if not os.path.exists(output_f):
+            os.makedirs(output_f,exist_ok=True)
         else:
-            shutil.rmtree(output)
-            os.mkdir(output)
+            shutil.rmtree(output_f)
+            os.mkdir(output_f)
 
         picked = gp.pickSamples(df,*ax).tolist() # pick samples from graugh
         print(f"Selected {len((picked))} samples.")
@@ -118,7 +119,7 @@ def main():
             gp.graugh(path_name,picked_data,time)
             plt.show()
         else:
-
+            # average pulse
             for i in picked:
                 data = gp.loadbi(i)
                 data = gp.BesselFilter(data,rate,fs = set['main']['cutoff'])
@@ -130,11 +131,11 @@ def main():
                 #plt.yscale('log')
                 plt.xlabel("time(s)")
                 plt.ylabel("volt(V)")
-                plt.savefig(f'CH{ch}_pulse/output/select/img/{name}.png')
+                plt.savefig(f'{output}/select/img/{name}.png')
                 plt.cla()
                 print(name)
 
-            np.savetxt(f'CH{ch}_pulse/output/select/selected_index.txt',picked,fmt="%s")
+            np.savetxt(f'{output}/select/selected_index.txt',picked,fmt="%s")
 
             
             num = 1
@@ -142,8 +143,8 @@ def main():
                 num = int(input("delete pulse number (finish [0]): "))
                 try:
                     picked.remove(f'CH{ch}_pulse/rawdata\\CH{ch}_{num}.dat')
-                    os.remove(f'CH{ch}_pulse/output/select/img/CH{ch}_{num}.png')
-                    np.savetxt(f'CH{ch}_pulse/output/select/selected_index.txt',picked,fmt="%s")
+                    os.remove(f'{output}/select/img/CH{ch}_{num}.png')
+                    np.savetxt(f'{output}/select/selected_index.txt',picked,fmt="%s")
                 except:
                     print("Not exist file")
 
@@ -164,7 +165,7 @@ def main():
             plt.xlabel("time(s)")
             plt.ylabel("volt(V)")
             plt.title("average pulse")
-            plt.savefig(f'CH{ch}_pulse/output/select/average_pulse.png')
+            plt.savefig(f'{output}/select/average_pulse.png')
             plt.show()
 
             plt.cla()
@@ -173,10 +174,10 @@ def main():
             plt.ylabel("volt(V)")
             plt.title("average pulse")
             plt.yscale('log')
-            plt.savefig(f'CH{ch}_pulse/output/select/average_pulse_log.png')
+            plt.savefig(f'{output}/select/average_pulse_log.png')
             plt.show()
 
-            np.savetxt(f'CH{ch}_pulse/output/select/average_pulse.txt',av)
+            np.savetxt(f'{output}/select/average_pulse.txt',av)
     
     print('end')
 
