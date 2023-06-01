@@ -90,13 +90,6 @@ def select_condition(df,set):
 def data_time(rate,samples):
     return  np.arange(0,1/rate*samples,1/rate)
 
-#サンプル数のチェック
-def check_samples(data,samples):
-    if len(data) == samples:
-        return "OK"
-    else:
-        return "NO"
-
 
 #ベースラインを作成
 def baseline(data,presamples,x,w):
@@ -220,6 +213,12 @@ def filter(data,rate,samples):
     return ifft.real 
 
 
+def gausse(x,A,mu,sigma):
+    return A*np.exp(-(x-mu)**2/(2.0*sigma**2))
+
+def FWHW(sigma):
+    return 2*sigma*(2*np.log(2))**(1/2)
+
 #フィッティング
 def monoExp(x,m,t):
     return m*np.exp(-t*x)
@@ -232,65 +231,9 @@ def doubleExp(x,m,t1,b1,t2,b2):
 def tripleExp(x,m,t1,b1,t2,b2,t3,b3):
     return m * (np.exp(-(x-b1)/t1) - np.exp(-(x-b2)/t2) -np.exp(-(x-b3)/t3))
 
-def tripleExp_rise(x,m,t1,b1,t2,b2,t3,b3,t4,b4):
-    return m * (np.exp(-(x-b1)/t1) - np.exp(-(x-b2)/t2) +np.exp(-(x-b3)/t3) + np.exp(-(x-b4)/t4))
-
 def forthExp(x,m,t1,b1,t2,b2,t3,b3,t4,b4):
     return m * (np.exp(-(x-b1)/t1) - np.exp(-(x-b2)/t2) -np.exp(-(x-b3)/t3) - np.exp(-(x-b4)/t4))
 
-def fitting(data,peak_index,time,x,w,mode,p0):
-    start = peak_index+x
-    x = time[start:start+w]
-    y = data[start:start+w]
-    try :
-        params,cov = curve_fit(monoExp,x,y,p0=p0,maxfev=500000)
-        m = params[0]
-        t = params[1]
-        squaredDiffs = np.square(y - monoExp(x, m, t))
-        squaredDiffsFromMean = np.square(y - np.mean(y))
-        rSquared = 1 - np.sum(squaredDiffs) / np.sum(squaredDiffsFromMean)
-        max_div = np.sqrt(np.max(squaredDiffs))
-            
-    except RuntimeError:
-        print('Error')
-        m , t, rSquared ,max_div = 0,0,0,0
-
-    return m , t, rSquared ,max_div
-
-
-
-#フィッティング(二次指数関数)
-def fitting_double(data,presamples,start,width,p0):
-    warnings.simplefilter('ignore')
-    warnings.simplefilter('error',scipy.optimize.OptimizeWarning)
-    warnings.simplefilter('error',scipy.optimize._optimize.OptimizeWarning)
-    x = np.arange(presamples+start,presamples+start+width)
-    y = data[presamples+start: presamples+start+width]
-    try:
-        params,cov = curve_fit(doubleExp,x,y,p0=p0,maxfev=100000)
-        squaredDiffs = np.square(data[presamples+start:presamples+start+width] - doubleExp(x,*params))
-        squaredDiffsFromMean = np.square(data - np.mean(y))
-        rSquared = 1 - np.sum(squaredDiffs) / np.sum(squaredDiffsFromMean)
-    except (scipy.optimize.OptimizeWarning,scipy.optimize._optimize.OptimizeWarning,RuntimeError):
-        params = np.zeros(len(p0))
-        rSquared = 0
-    return params,rSquared
-
-def fitting_triple(data,start,width,p0):
-    warnings.simplefilter('ignore')
-    warnings.simplefilter('error',scipy.optimize.OptimizeWarning)
-    warnings.simplefilter('error',scipy.optimize._optimize.OptimizeWarning)
-    x = np.arange(start,start+width)
-    y = data[start: start+width]
-    try:
-        params,cov = curve_fit(tripleExp,x,y,p0=p0,maxfev=100000)
-        squaredDiffs = np.square(data[start:start+width] - tripleExp(x,*params))
-        squaredDiffsFromMean = np.square(data - np.mean(y))
-        rSquared = 1 - np.sum(squaredDiffs) / np.sum(squaredDiffsFromMean)
-    except (scipy.optimize.OptimizeWarning,scipy.optimize._optimize.OptimizeWarning,RuntimeError):
-        params = np.zeros(len(p0))
-        rSquared = 0
-    return params,rSquared
 
 def fitExp(func,data,start,width,p0):
     warnings.simplefilter('ignore')

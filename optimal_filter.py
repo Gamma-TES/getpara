@@ -66,24 +66,19 @@ def main():
     plt.savefig(os.path.join(path_output,'opt_template.png'))
     plt.show()
 
-    pulsehight_array = []
-    #最適フィルタ適用
+    # optimal filter
     for index,row in df_sel.iterrows():
-        print(index)
+        print(os.path.basename(index))
         data = gp.loadbi(index)
         base = df.at[index,"base"]
         data = data-base
         data = gp.BesselFilter(data,rate,fs)
-        pulsehight = np.sum(data*filt)
-        pulsehight_array.append(pulsehight)
-
-    
-    np.savetxt(os.path.join(path_output,'pulseheight_opt.txt'),pulsehight_array)
-    df["height_opt"] = pulsehight_array
+        df.at[index,"height_opt"] = np.sum(data*filt)
     df.to_csv(f"CH{ch}_pulse/output/output.csv")
-
+    
 
 if __name__ == "__main__":
     main()
+    print("end")
 
     

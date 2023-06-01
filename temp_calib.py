@@ -100,7 +100,7 @@ def main():
 
 
 	for index,row in df_sel.iterrows():
-		row["height_opt_temp"] = row['height_opt']/Calibration(row['base'],popt)*st
+		df.at[index,"height_opt_temp"] = row['height_opt']/Calibration(row['base'],popt)*st
 
 	PlotCalibration(df["base"],df["height_opt_temp"],df.loc[picked,"base"],df.loc[picked,"height_opt_temp"])
 	np.savetxt(f'CH{ch}_pulse/output/select/pulseheight_opt_temp.txt',pulseheight_cal)
