@@ -1,10 +1,10 @@
-#　-----解析プログラム---------------------
-#　
-#  動作環境：MacOs Montray, Python3.10.8
+#-----解析プログラム---------------------
 #
-#　手順
+#  動作環境MacOs Montray, Python3.10.8
+#
+#手順
 # 1.パスを変更
-#   LabVIEWで作成したファイルパス。（おそらく"CH1_150mK_710uA_..."と長い。できるだけ絶対パスで）
+#   LabVIEWで作成したファイルパス。おそらく"CH1_150mK_710uA_..."と長い。できるだけ絶対パスで）
 # 2.パラメータ変更
 #   ①はLabVIEWでデータ取得した時のパラメータ。新しいものだとsetting.datができているので、それを読み込めば良い。
 #   ②はデータ解析用のパラメータ。このパラメータによって解析の結果は大きく変わるため慎重に調整する。詳細は下述。
@@ -117,15 +117,8 @@ if __name__ == '__main__':
 
         # output
         output = f'CH{ch}_pulse/output/{set["Config"]["output"]}'
-        if not os.path.exists(output):
-            os.makedirs(output,exist_ok=True)
-            df.to_csv(os.path.join(output,"output.csv"))
-        else:
-            replace = input('Replace output folder? (Yes -> [0], No (not save) -> [1]): ')
-            if replace =='0':
-                shutil.rmtree(output)
-                os.makedirs(output,exist_ok=True)
-                df.to_csv(os.path.join(output,"output.csv"))
+        df.to_csv(os.path.join(output,"output.csv"))
+        
         print('end\n-------------------------------------') 
         
 
