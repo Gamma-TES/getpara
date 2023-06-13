@@ -56,7 +56,7 @@ para = {"main":{
 # run
 if __name__ == '__main__':
     ax = sys.argv
-    ax.pop(0)
+    ax.append(0)
     
     # Get Setting
     set = gp.loadJson()
@@ -79,7 +79,7 @@ if __name__ == '__main__':
     os.chdir(path) 
 
     # -- test mode ----------------
-    if ax[0] == "-t":
+    if ax[1] == "-t":
         print("test mode")
         if os.path.exists(f'CH{ch}_pulse/test'):
             path_data = natsorted(glob.glob(f'CH{ch}_pulse/test/CH{ch}_*.dat'))
