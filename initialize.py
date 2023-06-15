@@ -39,7 +39,7 @@ def main():
     }
     set = json.dumps(setting_json,indent=4)
     
-    with open("C:/Users/gamma/matsumi/getpara/setting.json", 'w') as file:
+    with open("setting.json", 'w') as file:
         file.write(set)
 
     # output

@@ -34,6 +34,7 @@ import libs.getpara as gp
 import libs.fft_spectrum as sp
 import json
 import pprint
+import sys
 
 
 #-----Analtsis Parameter------------------------------------------------
@@ -54,7 +55,9 @@ para = {"main":{
 
 # run
 if __name__ == '__main__':
-
+    ax = sys.argv
+    ax.append(0)
+    
     # Get Setting
     set = gp.loadJson()
     if not 'main' in set:
@@ -62,6 +65,7 @@ if __name__ == '__main__':
         jsn = json.dumps(set,indent=4)
         with open("setting.json", 'w') as file:
             file.write(jsn)
+
     path = set["Config"]["path"]
     ch,rate,samples,presamples,threshold = \
         set["Config"]["channel"],set["Config"]['rate'],set["Config"]['samples'],set["Config"]["presamples"],set["Config"]["threshold"]
@@ -81,6 +85,29 @@ if __name__ == '__main__':
 
     path_data = natsorted(glob.glob(f'CH{ch}_pulse/rawdata/CH{ch}_*.dat'))
     mode = input('Analysis Mode (all -> [0], one -> [1]): ')
+
+    # -- test mode ----------------
+    if ax[1] == "-t":
+        print("test mode")
+        if os.path.exists(f'CH{ch}_pulse/test'):
+            path_data = natsorted(glob.glob(f'CH{ch}_pulse/test/CH{ch}_*.dat'))
+        else:
+            path_raw = natsorted(glob.glob(f'CH{ch}_pulse/rawdata/CH{ch}_*.dat'))
+            arr = np.arange(len(path_raw)) 
+            np.random.shuffle(arr) # 配列をシャッフルする
+            length = int(input('data number: '))
+            arr_select = arr[:length]
+            extruct = []
+            for i in arr_select:
+                path = f'CH{ch}_pulse/rawdata/CH{ch}_{i}.dat'
+                extruct.append(path)
+            path_data = natsorted(extruct)
+            mode = "0"
+    # -------------------------
+    else:
+        path_data = natsorted(glob.glob(f'CH{ch}_pulse/rawdata/CH{ch}_*.dat'))
+        mode = input('Analysis Mode (all -> [0], one -> [1]): ')
+
 
     # All Samples
     if mode == '0':
@@ -108,12 +135,17 @@ if __name__ == '__main__':
             rise,rise_10,rise_90 = gp.risetime(data,peak_av,peak_index,rate)
             decay,decay_10,decay_90 = gp.decaytime(data,peak_av,peak_index,rate)
             
-            data_column = [samples,base,peak_av,rise,decay,rise_fit[0],tau_rise,tau_decay,rSquared]
+            if tau_rise == 0:
+                label = 0
+            else:
+                label =1
+            data_column = [samples,base,peak_av,rise,decay,rise_fit[0],tau_rise,tau_decay,rSquared,label]
             data_array.append(data_column)
+            
         
         # create pandas DataFrame
         df = pd.DataFrame(data_array,\
-        columns=["samples","base","height","rise","decay","rise_fit",'tau_rise','tau_decay',"rSquared"],\
+        columns=["samples","base","height","rise","decay","rise_fit",'tau_rise','tau_decay',"rSquared","label"],\
         index=path_data)
 
         # output
