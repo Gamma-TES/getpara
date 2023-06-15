@@ -5,17 +5,19 @@ import os
 from natsort import natsorted
 import glob
 import shutil
-import libs.getpara as gp
+
 import pandas as pd
+from tkinter import filedialog
 
 eta = 98
+
+
 
 def main():
     set = gp.loadJson()
     os.chdir('H:/Matsumi/data/20230512/room2-2_140mK_870uA_gain10_trig0.4_500kHz/CH0_pulse/filter')
     ch = set['Config']['channel']
     rate,samples= 1e6,1e5
-    time = gp.data_time(rate,samples)
     fq = np.arange(0,rate,rate/samples)
 
 
@@ -42,5 +44,7 @@ def main():
     plt.show()
 
 
-main()
+if __name__ == '__main__':
+    fld = filedialog.askdirectory()
+    print(fld)
     

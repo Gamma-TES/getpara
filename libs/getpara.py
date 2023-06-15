@@ -78,12 +78,19 @@ def loadIndex(path):
 def select_condition(df,set):
     for i in set['select']:
         param,sym = i.split('-')
-        if sym == '>':
-            df = df[df[param] > set['select'][i]]
-        elif sym == '<':
-            df = df[df[param] < set['select'][i]]
-        elif sym == '=':
-            df = df[df[param] == set['select'][i]]
+        if i == "index->":
+            df = df.iloc[set['select'][i]:]
+        elif i == "index-<":
+            df = df.iloc[:set['select'][i]]
+        else:
+            if sym == '>':
+                df = df[df[param] > set['select'][i]]
+            elif sym == '<':
+                df = df[df[param] < set['select'][i]]
+            elif sym == '=':
+                df = df[df[param] == set['select'][i]]
+        
+
     return df
  
 
@@ -242,7 +249,7 @@ def fitExp(func,data,start,width,p0):
     x = np.arange(start,start+width)
     y = data[start: start+width]
     try:
-        params,cov = curve_fit(func,x,y,p0=p0,maxfev=100000)
+        params,cov = curve_fit(func,x,y,p0=p0,maxfev=10000)
         squaredDiffs = np.square(data[start:start+width] - func(x,*params))
         squaredDiffsFromMean = np.square(data - np.mean(y))
         rSquared = 1 - np.sum(squaredDiffs) / np.sum(squaredDiffsFromMean)

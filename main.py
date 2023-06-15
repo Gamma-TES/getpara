@@ -42,8 +42,8 @@ para = {"main":{
     'base_x':1000,
     'base_w':500,
     'peak_max':300,
-    'peak_x':5,
-    'peak_w':20,
+    'peak_x':3,
+    'peak_w':10,
     'fit_x':-1,
     'fit_w':1000,
     'fit_p0': [-1.6,12,10000,5570,10000],
@@ -62,22 +62,24 @@ if __name__ == '__main__':
         jsn = json.dumps(set,indent=4)
         with open("setting.json", 'w') as file:
             file.write(jsn)
-    pprint.pprint(set)
     path = set["Config"]["path"]
     ch,rate,samples,presamples,threshold = \
         set["Config"]["channel"],set["Config"]['rate'],set["Config"]['samples'],set["Config"]["presamples"],set["Config"]["threshold"]
     time = np.arange(0,1/rate*samples,1/rate)
+    output = f'CH{ch}_pulse/output/{set["Config"]["output"]}'
     if not 'cutoff' in set['main']:
         cutoff = input("cutoff: ")
         set['main']['cutoff'] = float(cutoff)
         jsn = json.dumps(set,indent=4)
         with open("setting.json", 'w') as file:
             file.write(jsn) 
-    os.chdir(path) 
+    
+    os.chdir(path)
+    jsn = json.dumps(set,indent=4)
+    with open(f'{output}/setting.json', 'w') as file:
+        file.write(jsn)
 
     path_data = natsorted(glob.glob(f'CH{ch}_pulse/rawdata/CH{ch}_*.dat'))
-    #path = natsorted(glob.glob(f'CH{ch}_pulse/test/CH{ch}_*.dat'))
-    
     mode = input('Analysis Mode (all -> [0], one -> [1]): ')
 
     # All Samples
@@ -114,9 +116,7 @@ if __name__ == '__main__':
         columns=["samples","base","height","rise","decay","rise_fit",'tau_rise','tau_decay',"rSquared"],\
         index=path_data)
 
-
         # output
-        output = f'CH{ch}_pulse/output/{set["Config"]["output"]}'
         df.to_csv(os.path.join(output,"output.csv"))
         
         print('end\n-------------------------------------') 
@@ -135,9 +135,9 @@ if __name__ == '__main__':
         filt = gp.BesselFilter(data,rate,set['main']['cutoff'])
 
         # Analysis
-        peak,peak_av,peak_index = gp.peak(data,presamples,set['main']['peak_max'],set['main']['peak_x'],set['main']['peak_w'])
-        rise,rise_10,rise_90 = gp.risetime(data,peak_av,peak_index,rate)
-        decay,decay_10,decay_90 = gp.decaytime(data,peak_av,peak_index,rate)
+        peak,peak_av,peak_index = gp.peak(filt,presamples,set['main']['peak_max'],set['main']['peak_x'],set['main']['peak_w'])
+        rise,rise_10,rise_90 = gp.risetime(filt,peak_av,peak_index,rate)
+        decay,decay_10,decay_90 = gp.decaytime(filt,peak_av,peak_index,rate)
 
         # Fitting
         p0 = [-1.6,12,presamples,5570,presamples]

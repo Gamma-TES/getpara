@@ -47,9 +47,9 @@ def main():
 
     for i in noise:
         try :
-            data = gp.loadbi(i)
-            data = gp.BesselFilter(data,rate,set['main']['cutoff'])
+            data = gp.loadbi(i)      
             base,data_ba = gp.baseline(data,set['Config']['presamples'],1000,500)
+            data = gp.BesselFilter(data_ba,rate,set['main']['cutoff'])
             peak = np.max(data_ba)
             if (base <= -3 and base >= 3) or peak >= float(set['Config']['threshold']):
                 print("Not noise")
@@ -64,7 +64,6 @@ def main():
 
     amp_spe = np.sqrt(model[:int(samples/2)+1])*int(set['Config']['eta'])*1e+6*np.sqrt(1/rate/samples)
 
-    os.makedirs(output)
     np.savetxt(f'{output}/modelnoise.txt',model)
     
     

@@ -8,6 +8,7 @@ from natsort import natsorted
 import libs.getpara as gp
 import libs.fft_spectrum as sp
 import json
+from tkinter import filedialog
 
 # Json形式へ変更
 
@@ -18,7 +19,7 @@ def loadJson():
 
 def main():
 
-    path = input('path: ')
+    path = filedialog.askdirectory()
     ch = input('ch: ')
     output = input("output name:")
     
@@ -42,14 +43,23 @@ def main():
         file.write(set)
 
     # output
-    output = f'{path}/CH{ch}_pulse/output/{output}'
-    if not os.path.exists(output):
-        os.makedirs(output,exist_ok=True)
+    pulse_output = f'{path}/CH{ch}_pulse/output/{output}'
+    if not os.path.exists(pulse_output):
+        os.makedirs(pulse_output,exist_ok=True)
     else:
-        replace = input('Replace output folder? (Yes -> [0], No (not save) -> [1]): ')
+        replace = input('Replace pulse output folder? (Yes -> [0], No (not save) -> [1]): ')
         if replace =='0':
-            shutil.rmtree(output)
-            os.makedirs(output,exist_ok=True)
+            shutil.rmtree(pulse_output)
+            os.makedirs(pulse_output,exist_ok=True)
+
+    output_noise = f'{path}/CH{ch}_noise/output/{output}'
+    if not os.path.exists(output_noise):
+        os.makedirs(output_noise,exist_ok=True)
+    else:
+        replace = input('Replace noise output folder? (Yes -> [0], No (not save) -> [1]): ')
+        if replace =='0':
+            shutil.rmtree(output_noise)
+            os.makedirs(output_noise,exist_ok=True)
 
     set = json.loads(set)
     print(set)
