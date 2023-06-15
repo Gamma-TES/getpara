@@ -9,6 +9,7 @@ import libs.getpara as gp
 import libs.fft_spectrum as sp
 import json
 from tkinter import filedialog
+import sys
 
 # Json形式へ変更
 
@@ -18,6 +19,15 @@ def loadJson():
     return jsn
 
 def main():
+
+    ax = sys.argv
+
+    if len(ax) > 1:
+        if ax[1] == "-p":
+            print("Post mode")
+        ch = ax[2:]
+        print(ch)
+    
 
     path = filedialog.askdirectory()
     ch = input('ch: ')

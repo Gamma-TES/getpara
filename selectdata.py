@@ -43,6 +43,10 @@ def main():
 
     ax = sys.argv
     ax.pop(0)
+
+    if '-p' in ax:
+        ax.remove('-p')
+
     set = gp.loadJson()
 
     # default condition

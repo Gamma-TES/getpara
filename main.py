@@ -83,9 +83,6 @@ if __name__ == '__main__':
     with open(f'{output}/setting.json', 'w') as file:
         file.write(jsn)
 
-    path_data = natsorted(glob.glob(f'CH{ch}_pulse/rawdata/CH{ch}_*.dat'))
-    mode = input('Analysis Mode (all -> [0], one -> [1]): ')
-
     # -- test mode ----------------
     if ax[1] == "-t":
         print("test mode")
