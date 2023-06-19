@@ -103,25 +103,28 @@ if __name__ == '__main__':
     # -------------------------
     else:
         path_data = natsorted(glob.glob(f'CH{ch}_pulse/rawdata/CH{ch}_*.dat'))
+        print(f"{len(path_data)} pulses")
         mode = input('Analysis Mode (all -> [0], one -> [1]): ')
 
+    
 
     # All Samples
     if mode == '0':
+        fitting_mode = input('fitting ?[1]')
         data_array = []
         for num in path_data:
             print(os.path.basename(num))
             data = gp.loadbi(num)
             base,data = gp.baseline(data,presamples,set['main']['base_x'],set['main']['base_w'])
 
-            
-            p0 = [-1.6,12,presamples,5570,presamples]
-            x_fit = np.arange(presamples-5,samples,0.1)
-            popt,rSquared = gp.fitExp(gp.doubleExp,data,presamples+set['main']['fit_x'],set['main']['fit_w'],p0 = set['main']['fit_p0'])
-            tau_rise = popt[1]/rate
-            tau_decay = popt[3]/rate
-            fitting = gp.doubleExp(x_fit,*popt)
-            rise_fit = gp.risetime(fitting,np.max(fitting),np.argmax(fitting),rate)
+            if fitting_mode == '1':
+                p0 = [-1.6,12,presamples,5570,presamples]
+                x_fit = np.arange(presamples-5,samples,0.1)
+                popt,rSquared = gp.fitExp(gp.doubleExp,data,presamples+set['main']['fit_x'],set['main']['fit_w'],p0 = set['main']['fit_p0'])
+                tau_rise = popt[1]/rate
+                tau_decay = popt[3]/rate
+                fitting = gp.doubleExp(x_fit,*popt)
+                rise_fit = gp.risetime(fitting,np.max(fitting),np.argmax(fitting),rate)
 
 
             # Low pass filter
@@ -132,18 +135,25 @@ if __name__ == '__main__':
             rise,rise_10,rise_90 = gp.risetime(data,peak_av,peak_index,rate)
             decay,decay_10,decay_90 = gp.decaytime(data,peak_av,peak_index,rate)
             
-            if tau_rise == 0:
-                label = 0
+            if fitting_mode == '1':
+                data_column = [samples,base,peak_av,rise,decay,rise_fit[0],tau_rise,tau_decay,rSquared]
             else:
-                label =1
-            data_column = [samples,base,peak_av,rise,decay,rise_fit[0],tau_rise,tau_decay,rSquared,label]
+                data_column = [samples,base,peak_av,rise,decay]
+
             data_array.append(data_column)
             
         
         # create pandas DataFrame
-        df = pd.DataFrame(data_array,\
-        columns=["samples","base","height","rise","decay","rise_fit",'tau_rise','tau_decay',"rSquared","label"],\
-        index=path_data)
+        if fitting_mode == '1':
+            df = pd.DataFrame(data_array,\
+                    columns=["samples","base","height","rise","decay","rise_fit",'tau_rise','tau_decay',"rSquared"],\
+                    index=path_data)
+                
+        else:
+            df = pd.DataFrame(data_array,\
+                    columns=["samples","base","height","rise","decay"],\
+                    index=path_data)
+        
 
         # output
         df.to_csv(os.path.join(output,"output.csv"))
