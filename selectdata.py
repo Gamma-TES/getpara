@@ -104,13 +104,20 @@ def main():
         
         if input('exit[1]: ') == "1":
             exit()
+        out_select = input('output name:')
+        if not 'output' in set['select']:
+            set['select']['output'] = out_select
+            jsn = json.dumps(set,indent=4)
+            with open(f"{__file__}/../setting.json", 'w') as file:
+                file.write(jsn)
 
-        output_f = f'{output}/select/img'
-        if not os.path.exists(output_f):
-            os.makedirs(output_f,exist_ok=True)
+
+        output_f = f'{output}/{out_select}'
+        if not os.path.exists(f"{output_f}/img"):
+            os.makedirs(f"{output_f}/img",exist_ok=True)
         else:
-            shutil.rmtree(output_f)
-            os.mkdir(output_f)
+            shutil.rmtree(f"{output_f}/img")
+            os.mkdir(f"{output_f}/img")
 
         picked = gp.pickSamples(df,*ax).tolist() # pick samples from graugh
         print(f"Selected {len((picked))} samples.")
@@ -135,11 +142,11 @@ def main():
                 #plt.yscale('log')
                 plt.xlabel("time(s)")
                 plt.ylabel("volt(V)")
-                plt.savefig(f'{output}/select/img/{name}.png')
+                plt.savefig(f'{output_f}/img/{name}.png')
                 plt.cla()
                 print(name)
 
-            np.savetxt(f'{output}/select/selected_index.txt',picked,fmt="%s")
+            np.savetxt(f'{output_f}/selected_index.txt',picked,fmt="%s")
 
             
             num = 1
@@ -147,12 +154,11 @@ def main():
                 num = int(input("delete pulse number (finish [0]): "))
                 try:
                     picked.remove(f'CH{ch}_pulse/rawdata\\CH{ch}_{num}.dat')
-                    os.remove(f'{output}/select/img/CH{ch}_{num}.png')
-                    np.savetxt(f'{output}/select/selected_index.txt',picked,fmt="%s")
+                    os.remove(f'{output_f}/img/CH{ch}_{num}.png')
+                    np.savetxt(f'{output_f}/selected_index.txt',picked,fmt="%s")
                 except:
                     print("Not exist file")
 
-            
             
 
             # create average pulse
@@ -169,7 +175,7 @@ def main():
             plt.xlabel("time(s)")
             plt.ylabel("volt(V)")
             plt.title("average pulse")
-            plt.savefig(f'{output}/select/average_pulse.png')
+            plt.savefig(f'{output_f}/average_pulse.png')
             plt.show()
 
             plt.cla()
@@ -178,10 +184,10 @@ def main():
             plt.ylabel("volt(V)")
             plt.title("average pulse")
             plt.yscale('log')
-            plt.savefig(f'{output}/select/average_pulse_log.png')
+            plt.savefig(f'{output_f}/average_pulse_log.png')
             plt.show()
 
-            np.savetxt(f'{output}/select/average_pulse.txt',av)
+            np.savetxt(f'{output_f}/average_pulse.txt',av)
     
     print('end')
 
