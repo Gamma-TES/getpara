@@ -16,11 +16,8 @@ R_SH = 3.9e-3	# shant resistance
 
 # set offset to zero
 def offset(data):
-    if data[0] > 0:
-        data = data - data[0]
-    else:
-        data = data + data[0]
-    
+    data = data - data[0]
+
     if np.mean(data[:10]) < 0:
         data = data * -1
     return data
@@ -43,7 +40,8 @@ def main():
         os.mkdir('rawdata')
     
 
-    temps = glob.glob("*mK")
+    temps = natsorted(glob.glob("*mK"))
+    print(temps)
 
     for t in temps:
         print(t)
@@ -58,7 +56,6 @@ def main():
         
         V_out = np.array(V_out)
         I_bias = np.array(I_bias)
-        
 
         V_out = offset(V_out)
 
@@ -109,7 +106,7 @@ def main():
         V_out = np.array(V_out)
         I_bias = np.array(I_bias)
         V_out = offset(V_out)
-        plt.plot(I_bias,V_out,marker = "o",linewidth = 1,markersize = 6,label=f'{t}mK')
+        plt.plot(I_bias,V_out,marker = "o",linewidth = 1,markersize = 6,label=t)
 
     plt.title('I-V')
     plt.xlabel("I_bias[uA]")
