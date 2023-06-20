@@ -35,6 +35,7 @@ import libs.fft_spectrum as sp
 import json
 import pprint
 import sys
+import re
 
 
 #-----Analtsis Parameter------------------------------------------------
@@ -83,8 +84,18 @@ if __name__ == '__main__':
     with open(f'{output}/setting.json', 'w') as file:
         file.write(jsn)
 
+    # -- PoST Mode setting----------------
+    if '-p' in ax:
+        RED = '\033[33m'
+        END = '\033[0m'
+        print(RED+'PoST mode'+END)
+        trig_ch = np.loadtxt('channel.txt')
+        post_ch = glob.glob('CH*_pulse')
+        print(post_ch)
+        
+
     # -- test mode ----------------
-    if ax[1] == "-t":
+    if "-t" in ax:
         print("test mode")
         if os.path.exists(f'CH{ch}_pulse/test'):
             path_data = natsorted(glob.glob(f'CH{ch}_pulse/test/CH{ch}_*.dat'))
@@ -99,25 +110,29 @@ if __name__ == '__main__':
                 path = f'CH{ch}_pulse/rawdata/CH{ch}_{i}.dat'
                 extruct.append(path)
             path_data = natsorted(extruct)
-            mode = "0"
     # -------------------------
     else:
         path_data = natsorted(glob.glob(f'CH{ch}_pulse/rawdata/CH{ch}_*.dat'))
         print(f"{len(path_data)} pulses")
-        mode = input('Analysis Mode (all -> [0], one -> [1]): ')
 
+
+    
     
 
     # All Samples
-    if mode == '0':
-        fitting_mode = input('fitting ?[1]')
+    if '-a' in ax:
+        if '-f' in ax:
+            fitting_mode = 1
+        else:
+            fitting_mode = 0
+
         data_array = []
         for num in path_data:
             print(os.path.basename(num))
             data = gp.loadbi(num)
             base,data = gp.baseline(data,presamples,set['main']['base_x'],set['main']['base_w'])
 
-            if fitting_mode == '1':
+            if fitting_mode:
                 p0 = [-1.6,12,presamples,5570,presamples]
                 x_fit = np.arange(presamples-5,samples,0.1)
                 popt,rSquared = gp.fitExp(gp.doubleExp,data,presamples+set['main']['fit_x'],set['main']['fit_w'],p0 = set['main']['fit_p0'])
@@ -135,23 +150,23 @@ if __name__ == '__main__':
             rise,rise_10,rise_90 = gp.risetime(data,peak_av,peak_index,rate)
             decay,decay_10,decay_90 = gp.decaytime(data,peak_av,peak_index,rate)
             
-            if fitting_mode == '1':
-                data_column = [samples,base,peak_av,rise,decay,rise_fit[0],tau_rise,tau_decay,rSquared]
+            if fitting_mode:
+                data_column = [samples,base,peak_av,peak_index,rise,decay,rise_fit[0],tau_rise,tau_decay,rSquared]
             else:
-                data_column = [samples,base,peak_av,rise,decay]
+                data_column = [samples,base,peak_av,peak_index,rise,decay]
 
             data_array.append(data_column)
             
         
         # create pandas DataFrame
-        if fitting_mode == '1':
+        if fitting_mode:
             df = pd.DataFrame(data_array,\
-                    columns=["samples","base","height","rise","decay","rise_fit",'tau_rise','tau_decay',"rSquared"],\
+                    columns=["samples","base","height","peak_index","rise","decay","rise_fit",'tau_rise','tau_decay',"rSquared"],\
                     index=path_data)
                 
         else:
             df = pd.DataFrame(data_array,\
-                    columns=["samples","base","height","rise","decay"],\
+                    columns=["samples","base","height","peak_index","rise","decay"],\
                     index=path_data)
         
 
@@ -161,74 +176,116 @@ if __name__ == '__main__':
         print('end\n-------------------------------------') 
         
 
-        # One Sample
-    elif mode == '1':
-        num = input('Enter pulse number: ')
-        path = f'CH{ch}_pulse/rawdata/CH{ch}_{num}.dat'
-        data = gp.loadbi(path)
+    # One Sample
+    else:
+        num = int(input('Enter pulse number: '))
+        
 
-        # Processing
-        base,data = gp.baseline(data,presamples,set['main']['base_x'],set['main']['base_w'])
-        mv = gp.moving_average(data,set['main']['mv_w'])
-        dif  = gp.diff(mv)
-        filt = gp.BesselFilter(data,rate,set['main']['cutoff'])
+        if '-p' in ax:
+            
+            trig = trig_ch[num-1]
+            print(trig)
 
-        # Analysis
-        peak,peak_av,peak_index = gp.peak(filt,presamples,set['main']['peak_max'],set['main']['peak_x'],set['main']['peak_w'])
-        rise,rise_10,rise_90 = gp.risetime(filt,peak_av,peak_index,rate)
-        decay,decay_10,decay_90 = gp.decaytime(filt,peak_av,peak_index,rate)
+            fig = plt.figure(figsize=(10,5))
 
-        # Fitting
-        p0 = [-1.6,12,presamples,5570,presamples]
-        x_fit = np.arange(presamples-5,samples,0.1)
-        popt,rSquared = gp.fitExp(gp.doubleExp,data,presamples+set['main']['fit_x'],set['main']['fit_w'],p0 = set['main']['fit_p0'])
-        tau_rise = popt[1]/rate
-        tau_decay = popt[3]/rate
-        fitting = gp.doubleExp(x_fit,*popt)
-        rise_fit = gp.risetime(fitting,np.max(fitting),np.argmax(fitting),rate)
+            for i in post_ch:
+                ch = re.sub(r"\D", "", i)
+                path = f'{i}/rawdata/CH{ch}_{num}.dat'
+                data = gp.loadbi(path)
+                base,data = gp.baseline(data,presamples,set['main']['base_x'],set['main']['base_w'])
+                filt = gp.BesselFilter(data,rate,set['main']['cutoff'])
+                
+                risepoint = presamples#np.argmax(dif)
+                peak,peak_av,peak_index = gp.peak(filt,risepoint,set['main']['peak_max'],set['main']['peak_x'],set['main']['peak_w'])
+                rise,rise_10,rise_90 = gp.risetime(filt,peak_av,peak_index,rate)
+                decay,decay_10,decay_90 = gp.decaytime(filt,peak_av,peak_index,rate)
+                
+                ax = fig.add_subplot(len(post_ch),1,int(ch)+1,title = f'cahnnel {ch}')
+
+                ax.plot(time,filt,'o',markersize=1,label="rawdata")
+            
+            
+                plt.vlines(time[rise_10],ymin=0,ymax=filt[rise_10],color = 'blue',linestyle='-.')
+                plt.vlines(time[rise_90],ymin=0,ymax=filt[rise_90],color = 'blue',linestyle='-.')
+                plt.scatter(time[rise_10],filt[rise_10],color = 'blue',label='rise')
+                plt.scatter(time[rise_90],filt[rise_90],color = 'blue')
+                plt.scatter(time[peak_index],peak_av, color='cyan', label ='peak',zorder = 2)
+                plt.scatter(time[risepoint],filt[risepoint], color='magenta', label ='risepoint',zorder = 2)
+
+            
+            plt.legend()
+            plt.suptitle(f'pulse {num}')
+            plt.show()
+            plt.cla()
+            #gp.graugh('diff pulse',dif,time[:samples-set['main']['mv_w']+1])
+            #plt.show()
+
+        
+        else:
+            # Processing
+            path = f'CH{ch}_pulse/rawdata/CH{ch}_{num}.dat'
+            data = gp.loadbi(path)
+            base,data = gp.baseline(data,presamples,set['main']['base_x'],set['main']['base_w'])
+            mv = gp.moving_average(data,set['main']['mv_w'])
+            dif  = gp.diff(mv)
+            filt = gp.BesselFilter(data,rate,set['main']['cutoff'])
+
+            # Analysis
+            peak,peak_av,peak_index = gp.peak(filt,presamples,set['main']['peak_max'],set['main']['peak_x'],set['main']['peak_w'])
+            rise,rise_10,rise_90 = gp.risetime(filt,peak_av,peak_index,rate)
+            decay,decay_10,decay_90 = gp.decaytime(filt,peak_av,peak_index,rate)
+            print(decay_10,decay_90)
+            
+
+            # Fitting
+            p0 = [-1.6,12,presamples,5570,presamples]
+            x_fit = np.arange(presamples-5,samples,0.1)
+            popt,rSquared = gp.fitExp(gp.doubleExp,data,presamples+set['main']['fit_x'],set['main']['fit_w'],p0 = set['main']['fit_p0'])
+            tau_rise = popt[1]/rate
+            tau_decay = popt[3]/rate
+            fitting = gp.doubleExp(x_fit,*popt)
+            rise_fit = gp.risetime(fitting,np.max(fitting),np.argmax(fitting),rate)
 
 
-        # Console output
-        print('\n---------------------------')
-        print(path)
-        print(f'samples : {len(data)}')
-        print(f'base : {base:.5f}')
-        print(f'hight : {peak_av:.5f}')
-        print(f'peak index : {peak_index:.5f}')
-        print(f'rise : {rise:.5f}')
-        print(f'rise_fit : {rise_fit[0]:.5f}')
-        print(f'tau_rise : {tau_rise:.5f}' )
-        print(f'decay : {decay:.5f}')
-        print(f'tau_decay : {tau_decay:.5f}' )
-        print(f'rSqared: {rSquared:.5f}')
+            # Console output
+            print('\n---------------------------')
+            print(path)
+            print(f'samples : {len(data)}')
+            print(f'base : {base:.5f}')
+            print(f'hight : {peak_av:.5f}')
+            print(f'peak index : {peak_index:.5f}')
+            print(f'rise : {rise:.5f}')
+            print(f'rise_fit : {rise_fit[0]:.5f}')
+            print(f'tau_rise : {tau_rise:.5f}' )
+            print(f'decay : {decay:.5f}')
+            print(f'tau_decay : {tau_decay:.5f}' )
+            print(f'rSqared: {rSquared:.5f}')
 
 
-        # Graugh
-        plt.plot(time,data,'o',markersize=1,label="rawdata")
-        plt.plot(time,filt,'o',markersize=1,label = "filt")
-        plt.plot(time[presamples-set['main']['base_x']:presamples-set['main']['base_x']+set['main']['base_w']],filt[presamples-set['main']['base_x']:presamples-set['main']['base_x']+set['main']['base_w']],'--',label="base")
-        plt.plot(x_fit/rate,fitting,'-.',label = 'fitting')
+            # Graugh
+            plt.plot(time,data,'o',markersize=1,label="rawdata")
+            plt.plot(time,filt,'o',markersize=1,label = "filt")
+            plt.plot(time[presamples-set['main']['base_x']:presamples-set['main']['base_x']+set['main']['base_w']],filt[presamples-set['main']['base_x']:presamples-set['main']['base_x']+set['main']['base_w']],'--',label="base")
+            plt.plot(x_fit/rate,fitting,'-.',label = 'fitting')
 
-        plt.vlines(time[rise_10],ymin=0,ymax=filt[rise_10],color = 'black',linestyle='-.')
-        plt.vlines(time[rise_90],ymin=0,ymax=filt[rise_90],color = 'black',linestyle='-.')
-        plt.scatter(time[rise_10],filt[rise_10],color = 'black',label='rise')
-        plt.scatter(time[rise_90],filt[rise_90],color = 'black')
-        plt.scatter(time[peak_index],peak_av, color='red', label ='peak',zorder = 2)
-        plt.scatter(time[presamples],filt[presamples], color='magenta', label ='risepoint',zorder = 2)
-    
-        plt.xlabel("time(s)")
-        plt.ylabel("volt(V)")
-        plt.title(os.path.basename(path).replace('.dat',''))
-        plt.grid()
-        plt.legend()
-        plt.show()
-        plt.cla()
-        # show diff pulse
-        gp.graugh('diff pulse',dif,time[:samples-set['main']['mv_w']+1])
-        plt.show()
+            plt.vlines(time[rise_10],ymin=0,ymax=filt[rise_10],color = 'black',linestyle='-.')
+            plt.vlines(time[rise_90],ymin=0,ymax=filt[rise_90],color = 'black',linestyle='-.')
+            plt.scatter(time[rise_10],filt[rise_10],color = 'black',label='rise')
+            plt.scatter(time[rise_90],filt[rise_90],color = 'black')
+            plt.scatter(time[peak_index],peak_av, color='red', label ='peak',zorder = 2)
+            plt.scatter(time[presamples],filt[presamples], color='magenta', label ='risepoint',zorder = 2)
+        
+            plt.xlabel("time(s)")
+            plt.ylabel("volt(V)")
+            plt.title(os.path.basename(path).replace('.dat',''))
+            plt.grid()
+            plt.legend()
+            plt.show()
+            plt.cla()
+            # show diff pulse
+            gp.graugh('diff pulse',dif,time[:samples-set['main']['mv_w']+1])
+            plt.show()
 
         print("end")
         print('---------------------------\n')
 
-    else:
-        print("Exit")

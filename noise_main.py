@@ -32,16 +32,8 @@ def main():
     output = f'CH{set["Config"]["channel"]}_noise/output/{set["Config"]["output"]}'
 
     
-    noise = []
-    model = np.array(0)*samples
-    
-    if os.path.exists(f"CH{ch}_noize/random_noise.txt"):
-        mode = input('All -> [0], random -> [1]: ')
-        if mode == "1":
-            with open(f"CH{ch}_noize/random_noise.txt",'r',encoding='latin-1') as f:
-                for row in f.read().splitlines():
-                    noise.append(row)
-    
+
+    model = np.array(0)*samples   
     noise = natsorted(glob.glob(f"CH{ch}_noise/rawdata/CH{ch}_*.dat"))
 
 

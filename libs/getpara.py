@@ -77,20 +77,21 @@ def loadIndex(path):
 
 def select_condition(df,set):
     for i in set['select']:
-        param,sym = i.split('-')
-        if i == "index->":
-            df = df.iloc[set['select'][i]:]
-        elif i == "index-<":
-            df = df.iloc[:set['select'][i]]
-        else:
-            if sym == '>':
-                df = df[df[param] > set['select'][i]]
-            elif sym == '<':
-                df = df[df[param] < set['select'][i]]
-            elif sym == '=':
-                df = df[df[param] == set['select'][i]]
-        
-
+        try:
+            param,sym = i.split('-')
+            if i == "index->":
+                df = df.iloc[set['select'][i]:]
+            elif i == "index-<":
+                df = df.iloc[:set['select'][i]]
+            else:
+                if sym == '>':
+                    df = df[df[param] > set['select'][i]]
+                elif sym == '<':
+                    df = df[df[param] < set['select'][i]]
+                elif sym == '=':
+                    df = df[df[param] == set['select'][i]]
+        except:
+            continue
     return df
  
 
@@ -153,7 +154,7 @@ def decaytime(data,peak,peak_index,rate):
             decay_90 = i
             break
     for j in range(decay_90,len(data)):
-        if data[j] <= peak*0.1:
+        if data[j] <= peak*0.:
             decay_10 = j
             break
     

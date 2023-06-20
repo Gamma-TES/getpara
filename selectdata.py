@@ -27,6 +27,7 @@ def average_pulse(index,presamples):
 ax_unit = {
     "base":'base[V]',
     "height":'pulse height[V]',
+    "peak_index":'peak index',
     "height_opt":'pulse height opt',
     "height_opt_temp":'pulse height opt temp',
     'rise':'rise[s]',
@@ -74,10 +75,7 @@ def main():
     df = gp.select_condition(df,set)
     
     print(f'Pulse : {len(df)} samples')
-    #&(df['decay']>0.01)&(df['rise_fit']!=0)&(df['rise_fit'] < 100)&(df['base']>0.0)\&(df['rise_fit']<0.001)&(df['tau_decay']<10000)
-    #&(df['decay']>0.001)&(df['rise']<0.0001)&(df['max_div']<0.01)&(df['decay']>0.01)
-    #a = df.loc['CH0_pulse/rawdata\CH0_47388.dat']
-    
+ 
     
 
     # time vs ax
