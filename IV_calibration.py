@@ -16,11 +16,9 @@ R_SH = 3.9e-3
 
 # set offset to zero
 def offset(data):
-    if data[0] > 0:
-        data = data - data[0]
-    else:
-        data = data + data[0]
-    
+
+    data = data - data[0]
+
     if np.mean(data[:10]) < 0:
         data = data * -1
     return data

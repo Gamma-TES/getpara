@@ -7,6 +7,8 @@ import sys
 import shutil
 import pprint
 import json
+import glob
+import re
 
 # main.py　の後　output.csv　を用いる
 # 見たい関係性のパラメータをプロット（risetime vs pulseheight など）
@@ -45,8 +47,7 @@ def main():
     ax = sys.argv
     ax.pop(0)
 
-    if '-p' in ax:
-        ax.remove('-p')
+    
 
     set = gp.loadJson()
 
@@ -65,17 +66,34 @@ def main():
 
     os.chdir(set["Config"]["path"])
 
+    
+        
+            
+        
+
     output = f'CH{set["Config"]["channel"]}_pulse/output/{set["Config"]["output"]}'
     df = pd.read_csv((f'{output}/output.csv'),index_col=0)
     rate,samples,presamples,threshold,ch = set["Config"]["rate"],set["Config"]["samples"],set["Config"]["presamples"],set["Config"]["threshold"],set["Config"]["channel"]
     time = gp.data_time(rate,samples)
+
+    if '-p' in ax:
+        ax.remove('-p')
+        if ch == '0':
+            ch_p = '1'
+        elif ch == '1':
+            ch_p = '0'
+        output2 = f'CH{ch_p}_pulse/output/{set["Config"]["output"]}'
+        df2 = pd.read_csv((f'{output2}/output.csv'),index_col=0)
     
 
     # manual select
     df = gp.select_condition(df,set)
     
     print(f'Pulse : {len(df)} samples')
- 
+    #&(df['decay']>0.01)&(df['rise_fit']!=0)&(df['rise_fit'] < 100)&(df['base']>0.0)\&(df['rise_fit']<0.001)&(df['tau_decay']<10000)
+    #&(df['decay']>0.001)&(df['rise']<0.0001)&(df['max_div']<0.01)&(df['decay']>0.01)
+    #a = df.loc['CH0_pulse/rawdata\CH0_47388.dat']
+    
     
 
     # time vs ax
@@ -120,6 +138,17 @@ def main():
         picked = gp.pickSamples(df,*ax).tolist() # pick samples from graugh
         print(f"Selected {len((picked))} samples.")
 
+        
+        x_sel,y_sel =gp.extruct(df.loc[picked],*ax)
+        plt.scatter(x,y,s=2,alpha=0.7)
+        plt.scatter(x_sel,y_sel,s=4)
+        plt.xlabel(ax_unit[ax[0]])
+        plt.ylabel(ax_unit[ax[1]])
+        plt.title(f"{ax[0]} vs {ax[1]}")
+        plt.grid()
+        plt.savefig(f'{output_f}/{ax[0]} vs {ax[1]}_sel_ch{ch}.png')
+        plt.show()
+        plt.cla()
 
         if len(picked) == 1:
             path_name = picked[0]
@@ -145,8 +174,31 @@ def main():
                 print(name)
 
             np.savetxt(f'{output_f}/selected_index.txt',picked,fmt="%s")
+            
+           
+            
+            sel_num = []
+            for i in picked:
+                num = re.findall(r'\d+', i)[2]
+                path_data = f"CH{ch_p}_pulse/rawdata\CH{ch_p}_{num}.dat"
+                sel_num.append(path_data)
+            
+            df_sel2 = df2.loc[sel_num]
+            x2,y2 = gp.extruct(df2,*ax)
+            x2_sel,y2_sel = gp.extruct(df_sel2,*ax)
+            plt.scatter(x2,y2,s=2,alpha=0.7)
+            plt.scatter(x2_sel,y2_sel,s=4)
+            plt.xlabel(ax_unit[ax[0]])
+            plt.ylabel(ax_unit[ax[1]])
+            plt.title(f"{ax[0]} vs {ax[1]}")
+            plt.grid()
+            plt.savefig(f'{output_f}/{ax[0]} vs {ax[1]}_sel_ch{ch_p}.png')
+            plt.show()
+            plt.cla()
 
             
+            
+            """
             num = 1
             while num != 0:
                 num = int(input("delete pulse number (finish [0]): "))
@@ -156,6 +208,7 @@ def main():
                     np.savetxt(f'{output_f}/selected_index.txt',picked,fmt="%s")
                 except:
                     print("Not exist file")
+            """
 
             
 
