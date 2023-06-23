@@ -8,12 +8,11 @@ import shutil
 import os
 import pprint
 
+
 # output.csvは必ず閉じておくこと（ファイルを保存できなくなる）
 # ---Parameter--------------------------------------------------
 
 
-#------------------------------------------------
-fs = 4e4
 
 
 def lowpass(F,fq,cf):
@@ -28,13 +27,14 @@ def main():
     os.chdir(path)
     output = f'CH{set["Config"]["channel"]}_pulse/output/{set["Config"]["output"]}'
     output_noise = f'CH{set["Config"]["channel"]}_noise/output/{set["Config"]["output"]}'
+    output_sel = os.path.join(output,set['select']['output'])
     ch,rate,samples = set["Config"]["channel"],set["Config"]["rate"],set["Config"]["samples"]
     time = gp.data_time(rate,samples)
     fq = np.arange(0,rate,rate/samples)
 
     
     
-    pulse_av = np.loadtxt(f"{output}/select/average_pulse.txt")
+    pulse_av = np.loadtxt(f"{output_sel}/average_pulse.txt")
     noise_spe = np.loadtxt(f"{output_noise}/modelnoise.txt")
 
 
@@ -46,12 +46,13 @@ def main():
     cf = set['main']['cutoff']
 
     #Fourier transform
+    #pulse_av = sp.hanning(pulse_av,samples)[0]
     F = fft.fft(pulse_av)
     amp = np.abs(F)
     amp_spe = np.sqrt(amp)*int(eta)*1e+6*np.sqrt(1/rate/samples)
-    np.savetxt(f'{output}/select/averagepulse_spectrum.txt',amp_spe)
+    np.savetxt(f'{output_sel}/averagepulse_spectrum.txt',amp_spe)
     sp.graugh_spe(fq[:int(samples/2)+1],amp_spe[:int(samples/2)+1])
-    plt.savefig(f'{output}/select/averagepulse_spectrum.png')
+    plt.savefig(f'{output_sel}/averagepulse_spectrum.png')
     plt.show()
 
     #LowPassFilter
@@ -63,9 +64,9 @@ def main():
 
     filt = fft.ifft(F2/noise_spe)
     filt = filt.real
-    np.savetxt(f'{output}/select/opt_template.txt',filt)
+    np.savetxt(f'{output_sel}/opt_template.txt',filt)
     plt.plot(time,filt)
-    plt.savefig(f'{output}/select/opt_template.png')
+    plt.savefig(f'{output_sel}/opt_template.png')
     plt.show()
 
     # optimal filter
@@ -74,7 +75,7 @@ def main():
         data = gp.loadbi(index)
         base = df.at[index,"base"]
         data = data-base
-        data = gp.BesselFilter(data,rate,fs)
+        data = gp.BesselFilter(data,rate,cf)
         df.at[index,"height_opt"] = np.sum(data*filt)
     df.to_csv(f"{output}/output.csv")
     

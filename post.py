@@ -8,78 +8,82 @@ import shutil
 import pprint
 import json
 import re
+from tkinter import filedialog 
 
+def overlap(df_0,df_1):
+    index_0,index_1 = df_0.index.values,df_1.index.values
+    ch0 = re.findall(r'\d+', index_0[0])[0]
+    ch1 = re.findall(r'\d+', index_1[0])[0]
+    num_0 = [re.findall(r'\d+', i)[2] for i in index_0]
+    num_1 = [re.findall(r'\d+', i)[2] for i in index_1]
+    df_comp_0 = df_0[df_0['number'].isin(df_1['number'])]
+    df_comp_1 = df_1[df_1['number'].isin(df_0['number'])]
+    
+    
+    return df_comp_0,df_comp_1
 
-ax_unit = {
-    "base":'base[V]',
-    "height":'pulse height[V]',
-    "peak_index":'peak index',
-    "height_opt":'pulse height opt',
-    "height_opt_temp":'pulse height opt temp',
-    'rise':'rise[s]',
-    'decay':'decay[s]',
-    'rise_fit':'rise_fit[s]',
-    'tau_rise':'tau_rise[s]',
-    'tau_decay':'tau_decay[s]',
-    'rSquared':'rSquared'
-}
-
+def df_number(df):
+    index= df.index.values
+    num = [re.findall(r'\d+', i)[2] for i in index]
+    df['number'] = num
+    return df
+    
 
 def main():
     ax = sys.argv
-    ax.pop(0)
-
-    """
-    path =  "E:/tsuruta/20230616/room1-ch2-3_180mK_570uA_100kHz_g10"
-    os.chdir(path)
-    ch0 =  pd.read_csv((f'CH0_pulse/output/1/output.csv'),index_col=0)
-    ch1 =  pd.read_csv((f'CH1_pulse/output/1/output.csv'),index_col=0)
     
-    x = ch0['height']
-    y = ch1['height']
-    print(len(x))
-    print(len(y))
-
-    plt.scatter(x,y,s=0.4)
-    plt.grid()
-    plt.show()
-    """
-
+    ch0 = ax[1]
+    ch1 = ax[2]
+    para = ax[3]
     set = gp.loadJson()
     os.chdir(set["Config"]["path"])
 
-    output_0 = f'CH{0}_pulse/output/{set["Config"]["output"]}'
-    output_1 = f'CH{1}_pulse/output/{set["Config"]["output"]}'
+    output_0 = f'CH{ch0}_pulse/output/{set["Config"]["output"]}'
+    output_1 = f'CH{ch1}_pulse/output/{set["Config"]["output"]}'
+    
+    df_0 =  pd.read_csv((f'{output_0}/output.csv'),index_col=0)
+    df_1 =  pd.read_csv((f'{output_1}/output.csv'),index_col=0)
 
-    df_0 = pd.read_csv((f'{output_0}/output.csv'),index_col=0)
-    df_1 = pd.read_csv((f'{output_1}/output.csv'),index_col=0)
+    df_0 = df_number(df_0)
+    df_1 = df_number(df_1)
+
+    df_0 = gp.select_condition(df_0,set)
+    df_1 = gp.select_condition(df_1,set)
+    df_0_over,df_1_over = overlap(df_0,df_1)
+    x,y = df_0_over[para],df_1_over[para]
+
+    plt.scatter(x,y,s=0.4)
+    plt.xlabel(f'channel {ch0}')
+    plt.ylabel(f'channel {ch1}')
+    plt.title(para)
+    plt.grid()
+    plt.show()
     
 
-    path = "E:/tsuruta/20230616/room1-ch2-3_180mK_570uA_100kHz_g10\CH0_pulse\output/1/1/selected_index.txt"
-    ch =1
+
+
+    
+    path = filedialog.askopenfilename(filetypes=[('index file','*.txt')])
+
     selectdata = gp.loadIndex(path)
-    numbers = []
-    for i in selectdata:
-        num = re.findall(r'\d+', i)[2]
-        path_data = f"CH{ch}_pulse/rawdata\CH{ch}_{num}.dat"
-        numbers.append(path_data)
-    df_sel = df_1.loc[numbers]
+    index_0= []
+    index_1= []
+    num = [re.findall(r'\d+', i)[2] for i in selectdata]
+    df_select_0 = df_0_over[df_0_over['number'].isin(num)]
+    df_select_1 = df_1_over[df_1_over['number'].isin(num)]
     
-    x,y = gp.extruct(df_0,*ax)
-    x_select,y_select = gp.extruct(df_sel.loc[numbers],*ax)
+    x_select,y_select = df_select_0[para],df_select_1[para]
 
-
-    
     plt.scatter(x,y,s=2,alpha=0.5)
     plt.scatter(x_select,y_select,s=2,alpha=1)
-    plt.xlabel(ax_unit[ax[0]])
-    plt.ylabel(ax_unit[ax[1]])
-    plt.title(f"{ax[0]} vs {ax[1]}")
+    plt.xlabel(f'channel {ch0}')
+    plt.xlabel(f'channel {ch1}')
+    plt.title(para)
     plt.grid()
-    #plt.savefig(f'{output}/{ax[0]} vs {ax[1]}.png')
     plt.show()
     plt.cla()
     #a = df.loc['CH0_pulse/rawdata\CH0_47388.dat']
+    
     
     
 

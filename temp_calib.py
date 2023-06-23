@@ -56,13 +56,6 @@ def PlotCalibration(x1,y1,x2,y2):
 	plt.cla()
 
 
-def SelectBase(minBase,maxBase,x,y):
-	sel = []
-	for i in range(len(x)):
-		if minBase <= x[i] <= maxBase:
-			sel.append(y[i])
-	return sel
-
 
 def main():
 	

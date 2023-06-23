@@ -9,10 +9,20 @@ import pprint
 import json
 import glob
 import re
+from tkinter import filedialog
 
-# main.py　の後　output.csv　を用いる
-# 見たい関係性のパラメータをプロット（risetime vs pulseheight など）
-# プロットから平均パルスを作成
+# main.py　の後　output.csv　を用いてパラメータの相関をみる
+# 
+# 実行例--------------
+# ex) python selectdata.py rise height
+# exit[1]: 1 (終了)
+# exit[1]: Enter (continue)
+# 囲んだ所のパルスを抽出、平均パルスを作成
+#
+# setting.json　を用いてプロットするデータの条件を絞ることができる
+# ex) "base->":0
+# ex) "rise-<":0.01
+# ex) "samples-=":100000
 
 
 
@@ -77,6 +87,7 @@ def main():
     time = gp.data_time(rate,samples)
 
     if '-p' in ax:
+        mode = "post"
         ax.remove('-p')
         if ch == '0':
             ch_p = '1'
@@ -84,16 +95,15 @@ def main():
             ch_p = '0'
         output2 = f'CH{ch_p}_pulse/output/{set["Config"]["output"]}'
         df2 = pd.read_csv((f'{output2}/output.csv'),index_col=0)
+    else:
+        mode = "single"
     
 
     # manual select
     df = gp.select_condition(df,set)
     
     print(f'Pulse : {len(df)} samples')
-    #&(df['decay']>0.01)&(df['rise_fit']!=0)&(df['rise_fit'] < 100)&(df['base']>0.0)\&(df['rise_fit']<0.001)&(df['tau_decay']<10000)
-    #&(df['decay']>0.001)&(df['rise']<0.0001)&(df['max_div']<0.01)&(df['decay']>0.01)
-    #a = df.loc['CH0_pulse/rawdata\CH0_47388.dat']
-    
+       
     
 
     # time vs ax
@@ -121,11 +131,11 @@ def main():
         if input('exit[1]: ') == "1":
             exit()
         out_select = input('output name:')
-        if not 'output' in set['select']:
-            set['select']['output'] = out_select
-            jsn = json.dumps(set,indent=4)
-            with open(f"{__file__}/../setting.json", 'w') as file:
-                file.write(jsn)
+        set['select']['output'] = out_select
+        jsn = json.dumps(set,indent=4)
+        print(jsn)
+        with open(f"{__file__}/../setting.json", 'w') as file:
+            file.write(jsn)
 
 
         output_f = f'{output}/{out_select}'
@@ -176,27 +186,35 @@ def main():
             np.savetxt(f'{output_f}/selected_index.txt',picked,fmt="%s")
             
            
-            
-            sel_num = []
-            for i in picked:
-                num = re.findall(r'\d+', i)[2]
-                path_data = f"CH{ch_p}_pulse/rawdata\CH{ch_p}_{num}.dat"
-                sel_num.append(path_data)
-            
-            df_sel2 = df2.loc[sel_num]
-            x2,y2 = gp.extruct(df2,*ax)
-            x2_sel,y2_sel = gp.extruct(df_sel2,*ax)
-            plt.scatter(x2,y2,s=2,alpha=0.7)
-            plt.scatter(x2_sel,y2_sel,s=4)
-            plt.xlabel(ax_unit[ax[0]])
-            plt.ylabel(ax_unit[ax[1]])
-            plt.title(f"{ax[0]} vs {ax[1]}")
-            plt.grid()
-            plt.savefig(f'{output_f}/{ax[0]} vs {ax[1]}_sel_ch{ch_p}.png')
-            plt.show()
-            plt.cla()
+            if mode == "post":
+                sel_num = []
+                for i in picked:
+                    num = re.findall(r'\d+', i)[2]
+                    path_data = f"CH{ch_p}_pulse/rawdata\CH{ch_p}_{num}.dat"
+                    sel_num.append(path_data)
+                
+                df_sel2 = df2.loc[sel_num]
+                x2,y2 = gp.extruct(df2,*ax)
+                x2_sel,y2_sel = gp.extruct(df_sel2,*ax)
+                plt.scatter(x2,y2,s=2,alpha=0.7)
+                plt.scatter(x2_sel,y2_sel,s=4)
+                plt.xlabel(ax_unit[ax[0]])
+                plt.ylabel(ax_unit[ax[1]])
+                plt.title(f"{ax[0]} vs {ax[1]}")
+                plt.grid()
+                plt.savefig(f'{output_f}/{ax[0]} vs {ax[1]}_sel_ch{ch_p}.png')
+                plt.show()
+                plt.cla()
 
-            
+            # delete noise data
+            fle = filedialog.askopenfilenames(filetypes=[('画像ファイル','*.png')],initialdir=f"{output_f}/img")
+            for f in fle:
+                num =  re.findall(r'\d+', os.path.basename(f))[1]
+                picked.remove(f'CH{ch}_pulse/rawdata\\CH{ch}_{num}.dat')
+                os.remove(f'{output_f}/img/CH{ch}_{num}.png')
+                np.savetxt(f'{output_f}/selected_index.txt',picked,fmt="%s")
+                index = f"CH{ch}_pulse/rawdata\CH{ch}_{num}.dat"
+                df.at[index,"quality"] = 0
             
             """
             num = 1
@@ -206,6 +224,8 @@ def main():
                     picked.remove(f'CH{ch}_pulse/rawdata\\CH{ch}_{num}.dat')
                     os.remove(f'{output_f}/img/CH{ch}_{num}.png')
                     np.savetxt(f'{output_f}/selected_index.txt',picked,fmt="%s")
+                    index = f"CH{ch}_pulse/rawdata\CH{ch}_{num}.dat"
+                    df.at[index,"quality"] = 0
                 except:
                     print("Not exist file")
             """
@@ -240,12 +260,17 @@ def main():
 
             np.savetxt(f'{output_f}/average_pulse.txt',av)
     
-    print('end')
+    
+    jsn = json.dumps(set,indent=4)
+    with open(f'{output_f}/setting.json', 'w') as file:
+        file.write(jsn)
+    df.to_csv(f'{output}/output.csv')
 
 
 #実行
 if __name__=='__main__':
     main()
+    print('end')
 
     
 

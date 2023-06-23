@@ -10,6 +10,7 @@ import libs.fft_spectrum as sp
 import json
 from tkinter import filedialog
 import sys
+import re
 
 # Json形式へ変更
 
@@ -32,7 +33,7 @@ def main():
     path = filedialog.askdirectory()
     ch = input('ch: ')
     output = input("output name:")
-    
+    post_ch = glob.glob(f'{path}/CH*_pulse')
 
     setting = np.loadtxt(f"{path}/Setting.txt",skiprows = 10)
     setting_json = {
@@ -53,14 +54,17 @@ def main():
         file.write(set)
 
     # output
-    pulse_output = f'{path}/CH{ch}_pulse/output/{output}'
-    if not os.path.exists(pulse_output):
-        os.makedirs(pulse_output,exist_ok=True)
-    else:
-        replace = input('Replace pulse output folder? (Yes -> [0], No (not save) -> [1]): ')
-        if replace =='0':
-            shutil.rmtree(pulse_output)
+    
+    for i in post_ch:
+        ch = int(re.sub(r"\D", "", i))
+        pulse_output = f'{path}/CH{ch}_pulse/output/{output}'
+        if not os.path.exists(pulse_output):
             os.makedirs(pulse_output,exist_ok=True)
+        else:
+            replace = input('Replace pulse output folder? (Yes -> [0], No (not save) -> [1]): ')
+            if replace =='0':
+                shutil.rmtree(pulse_output)
+                os.makedirs(pulse_output,exist_ok=True)
 
     output_noise = f'{path}/CH{ch}_noise/output/{output}'
     if not os.path.exists(output_noise):

@@ -17,7 +17,7 @@ import warnings
 
 test_data='E:/matsumi/data/20230512/room2-2_140mK_870uA_gain10_trig0.4_500kHz/CH0_pulse/rawdata/CH0_4833.dat'
 
-
+e = 2.718
 #---解析プログラム作成------------------------------------------------------------
 
 # ファイル読み込み(バイナリ)
@@ -90,6 +90,8 @@ def select_condition(df,set):
                     df = df[df[param] < set['select'][i]]
                 elif sym == '=':
                     df = df[df[param] == set['select'][i]]
+                elif sym == '!=':
+                    df = df[df[param] != set['select'][i]]
         except:
             continue
     return df
@@ -150,11 +152,11 @@ def decaytime(data,peak,peak_index,rate):
     decay_90 = 0
     decay_10 = 0
     for i in range(peak_index,len(data)):
-        if data[i] <= peak*0.9:
+        if data[i] <= peak*1:
             decay_90 = i
             break
     for j in range(decay_90,len(data)):
-        if data[j] <= peak*0.:
+        if data[j] <= peak*0.7:
             decay_10 = j
             break
     
@@ -226,6 +228,10 @@ def gausse(x,A,mu,sigma):
 
 def FWHW(sigma):
     return 2*sigma*(2*np.log(2))**(1/2)
+
+def fit_func(func):
+    if func == 'monoExp':
+        return monoExp
 
 #フィッティング
 def monoExp(x,m,t):

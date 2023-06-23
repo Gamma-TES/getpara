@@ -1,0 +1,119 @@
+<?xml version='1.0' standalone='yes' ?>
+<LVData xmlns="http://www.ni.com/LVData">
+<Version>16.0f5</Version>
+<Cluster>
+<Name>Setting in</Name>
+<NumElts>2</NumElts>
+<Cluster>
+<Name>Hardware Config</Name>
+<NumElts>9</NumElts>
+<DBL>
+<Name>Max Input</Name>
+<Val>5.00000000000000</Val>
+</DBL>
+<DBL>
+<Name>Minimum Input</Name>
+<Val>-5.00000000000000</Val>
+</DBL>
+<DAQChannel>
+<Name>DAQ Channel</Name>
+<Val>PXI2Slot2/ai0</Val>
+</DAQChannel>
+<DBL>
+<Name>Sample Rate</Name>
+<Val>250000.00000000000000</Val>
+</DBL>
+<DBL>
+<Name>Sample/Channel</Name>
+<Val>100000.00000000000000</Val>
+</DBL>
+<Refnum>
+<Name>DAQmx Task name</Name>
+<RefKind>Generic Tag</RefKind>
+<RefType>NIDAQ</RefType>
+<Val></Val>
+</Refnum>
+<Boolean>
+<Name>Reverse</Name>
+<Val>1</Val>
+</Boolean>
+<Boolean>
+<Name>Flux Jump</Name>
+<Val>1</Val>
+</Boolean>
+<DBL>
+<Name>DC</Name>
+<Val>1.00000000000000</Val>
+</DBL>
+</Cluster>
+<Cluster>
+<Name>Log Config</Name>
+<NumElts>13</NumElts>
+<Path>
+<Name>Log File Path</Name>
+<Val>D:\TSURUTA</Val>
+</Path>
+<DBL>
+<Name>Save Samples</Name>
+<Val>49999.99999999999990</Val>
+</DBL>
+<DBL>
+<Name>Trigger Threshould</Name>
+<Val>0.30000000000000</Val>
+</DBL>
+<DBL>
+<Name>Trigger Time</Name>
+<Val>0.00000000000000</Val>
+</DBL>
+<Boolean>
+<Name>Threshould Trigger</Name>
+<Val>0</Val>
+</Boolean>
+<Boolean>
+<Name>Time Trigger</Name>
+<Val>0</Val>
+</Boolean>
+<String>
+<Name>Folder name</Name>
+<Val>TES-2_ch3_161mK_870uA_gain10_trig0.3_5</Val>
+</String>
+<Boolean>
+<Name>Trigger</Name>
+<Val>1</Val>
+</Boolean>
+<DBL>
+<Name>PreTrigger Samples</Name>
+<Val>25000.00000000000000</Val>
+</DBL>
+<Array>
+<Name>Pulse Data Path</Name>
+<Dimsize>0</Dimsize>
+<Path>
+<Name>appended path</Name>
+<Val></Val>
+</Path>
+</Array>
+<Array>
+<Name>Noise Data Path</Name>
+<Dimsize>0</Dimsize>
+<Path>
+<Name>appended path</Name>
+<Val></Val>
+</Path>
+</Array>
+<Array>
+<Name>Log file Ref</Name>
+<Dimsize>0</Dimsize>
+<Refnum>
+<Name>refnum out</Name>
+<RefKind>Byte Stream File</RefKind>
+<Val></Val>
+</Refnum>
+</Array>
+<Boolean>
+<Name>Log?</Name>
+<Val>0</Val>
+</Boolean>
+</Cluster>
+</Cluster>
+</LVData>
