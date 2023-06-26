@@ -11,13 +11,12 @@ import re
 from tkinter import filedialog 
 
 def overlap(df_0,df_1):
-    index_0,index_1 = df_0.index.values,df_1.index.values
-    ch0 = re.findall(r'\d+', index_0[0])[0]
-    ch1 = re.findall(r'\d+', index_1[0])[0]
-    num_0 = [re.findall(r'\d+', i)[2] for i in index_0]
-    num_1 = [re.findall(r'\d+', i)[2] for i in index_1]
-    df_comp_0 = df_0[df_0['number'].isin(df_1['number'])]
-    df_comp_1 = df_1[df_1['number'].isin(df_0['number'])]
+    #index_0,index_1 = df_0.index.values,df_1.index.values
+    ##ch1 = re.findall(r'\d+', index_1[0])[0]
+    #num_0 = [re.findall(r'\d+', i)[2] for i in index_0]
+    #num_1 = [re.findall(r'\d+', i)[2] for i in index_1]
+    df_comp_0 = df_0[df_0.index.isin(df_1.index)]
+    df_comp_1 = df_1[df_1.index.isin(df_0.index)]
     
     
     return df_comp_0,df_comp_1
@@ -44,8 +43,8 @@ def main():
     df_0 =  pd.read_csv((f'{output_0}/output.csv'),index_col=0)
     df_1 =  pd.read_csv((f'{output_1}/output.csv'),index_col=0)
 
-    df_0 = df_number(df_0)
-    df_1 = df_number(df_1)
+    #df_0 = df_number(df_0)
+    #df_1 = df_number(df_1)
 
     df_0 = gp.select_condition(df_0,set)
     df_1 = gp.select_condition(df_1,set)

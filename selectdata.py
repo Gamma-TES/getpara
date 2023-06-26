@@ -100,15 +100,15 @@ def main():
     
 
     # manual select
-    df = gp.select_condition(df,set)
+    df_clear = gp.select_condition(df,set)
     
-    print(f'Pulse : {len(df)} samples')
+    print(f'Pulse : {len(df_clear)} samples')
        
     
 
     # time vs ax
     if len(ax) == 1:
-        y = gp.extruct(df,ax)
+        y = gp.extruct(df_clear,ax)
         x = np.arange(len(y[0]))
         plt.scatter(x,y[0],s=0.4)
         plt.xlabel("data number")
@@ -118,7 +118,7 @@ def main():
 
 
     elif len(ax) == 2:
-        x,y = gp.extruct(df,*ax)
+        x,y = gp.extruct(df_clear,*ax)
         plt.scatter(x,y,s=2,alpha=0.7)
         plt.xlabel(ax_unit[ax[0]])
         plt.ylabel(ax_unit[ax[1]])
@@ -145,11 +145,11 @@ def main():
             shutil.rmtree(f"{output_f}/img")
             os.mkdir(f"{output_f}/img")
 
-        picked = gp.pickSamples(df,*ax).tolist() # pick samples from graugh
+        picked = gp.pickSamples(df_clear,*ax).tolist() # pick samples from graugh
         print(f"Selected {len((picked))} samples.")
 
         
-        x_sel,y_sel =gp.extruct(df.loc[picked],*ax)
+        x_sel,y_sel =gp.extruct(df_clear.loc[picked],*ax)
         plt.scatter(x,y,s=2,alpha=0.7)
         plt.scatter(x_sel,y_sel,s=4)
         plt.xlabel(ax_unit[ax[0]])
@@ -163,16 +163,17 @@ def main():
         if len(picked) == 1:
             path_name = picked[0]
             picked_data = gp.loadbi(path_name)
-            print(df.loc[path_name]) 
+            print(df_clear.loc[path_name]) 
             gp.graugh(path_name,picked_data,time)
             plt.show()
         else:
             # average pulse
             for i in picked:
-                data = gp.loadbi(i)
+                path = f'CH{ch}_pulse/rawdata\\CH{ch}_{i}.dat'
+                data = gp.loadbi(path)
                 data = gp.BesselFilter(data,rate,fs = set['main']['cutoff'])
                 base,data = gp.baseline(data,presamples,1000,500)
-                name = os.path.splitext(os.path.basename(i))[0]
+                name = os.path.splitext(os.path.basename(path))[0]
                 plt.plot(time,data)
                 #plt.xlim(0.009,0.0130)
                 plt.title(name)
@@ -188,12 +189,12 @@ def main():
            
             if mode == "post":
                 sel_num = []
+                """
                 for i in picked:
-                    num = re.findall(r'\d+', i)[2]
-                    path_data = f"CH{ch_p}_pulse/rawdata\CH{ch_p}_{num}.dat"
+                    path_data = f"CH{ch_p}_pulse/rawdata\CH{ch_p}_{i}.dat"
                     sel_num.append(path_data)
-                
-                df_sel2 = df2.loc[sel_num]
+                """
+                df_sel2 = df2.loc[picked]
                 x2,y2 = gp.extruct(df2,*ax)
                 x2_sel,y2_sel = gp.extruct(df_sel2,*ax)
                 plt.scatter(x2,y2,s=2,alpha=0.7)
@@ -206,29 +207,15 @@ def main():
                 plt.show()
                 plt.cla()
 
+
             # delete noise data
             fle = filedialog.askopenfilenames(filetypes=[('画像ファイル','*.png')],initialdir=f"{output_f}/img")
             for f in fle:
-                num =  re.findall(r'\d+', os.path.basename(f))[1]
-                picked.remove(f'CH{ch}_pulse/rawdata\\CH{ch}_{num}.dat')
+                num =  int(re.findall(r'\d+', os.path.basename(f))[1])              
+                picked.remove(num)
                 os.remove(f'{output_f}/img/CH{ch}_{num}.png')
                 np.savetxt(f'{output_f}/selected_index.txt',picked,fmt="%s")
-                index = f"CH{ch}_pulse/rawdata\CH{ch}_{num}.dat"
-                df.at[index,"quality"] = 0
-            
-            """
-            num = 1
-            while num != 0:
-                num = int(input("delete pulse number (finish [0]): "))
-                try:
-                    picked.remove(f'CH{ch}_pulse/rawdata\\CH{ch}_{num}.dat')
-                    os.remove(f'{output_f}/img/CH{ch}_{num}.png')
-                    np.savetxt(f'{output_f}/selected_index.txt',picked,fmt="%s")
-                    index = f"CH{ch}_pulse/rawdata\CH{ch}_{num}.dat"
-                    df.at[index,"quality"] = 0
-                except:
-                    print("Not exist file")
-            """
+                df.at[num,"quality"] = 0
 
             
 
@@ -236,7 +223,8 @@ def main():
             print('Creating Average Pulse...')
             array = []
             for i in picked:
-                data = gp.loadbi(i)
+                path = f'CH{ch}_pulse/rawdata\\CH{ch}_{i}.dat'
+                data = gp.loadbi(path)
                 filt = gp.BesselFilter(data,rate,set['main']['cutoff'])
                 base,data = gp.baseline(filt,presamples,1000,500)
                 array.append(data)

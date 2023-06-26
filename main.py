@@ -30,40 +30,45 @@ import sys
 import re
 import matplotlib.cm as cm
 
-cmap = cm.get_cmap("hsv")
 
+#---Initialize setting------------------------------------------------
 
-#-----Analtsis Parameter------------------------------------------------
-
-para = {"main":{
-    'base_x':1000,
-    'base_w':500,
-    'peak_max':300,
-    'peak_x':3,
-    'peak_w':10,
-    'fit_func':"doubleExp",
-    'fit_x':-1,
-    'fit_w':1000,
-    'fit_p0': [-1.6,12,10000,5570,10000],
-    'mv_w':100,
-    'cutoff':10000
+para = {"main": {
+        "base_x": 1000,
+        "base_w": 500,
+        "peak_max": 300,
+        "peak_x": 3,
+        "peak_w": 10,
+        "fit_func": "monoExp",
+        "fit_x": 5000,
+        "fit_w": 50000,
+        "fit_p0": [
+            0.1,
+            1e-05
+        ],
+        "mv_w": 100,
+        "cutoff": 10000.0
     }
 }
-para2 = {"main2":{
-    'base_x':1000,
-    'base_w':500,
-    'peak_max':3000,
-    'peak_x':100,
-    'peak_w':500,
-    'fit_func':"doubleExp",
-    'fit_x':-1,
-    'fit_w':1000,
-    'fit_p0': [-1.6,12,10000,5570,10000],
-    'mv_w':100,
-    'cutoff':10000
+para2 = {"main2": {
+        "base_x": 1000,
+        "base_w": 500,
+        "peak_max": 4000,
+        "peak_x": 100,
+        "peak_w": 500,
+        "fit_func": "monoExp",
+        "fit_x": 5000,
+        "fit_w": 50000,
+        "fit_p0": [
+            0.1,
+            1e-05
+        ],
+        "mv_w": 100,
+        "cutoff": 10000
     }
 }
 
+#------------------------------------------------
 
 # run
 if __name__ == '__main__':
@@ -96,6 +101,11 @@ if __name__ == '__main__':
         fitting_mode = 1
     else:
         fitting_mode = 0
+
+    if '-l' in ax:
+        lpf = 1
+    else:
+        lpf = 0
 
     # get setting from setting.json
     set_config = set["Config"]
@@ -187,10 +197,11 @@ if __name__ == '__main__':
 
 
             # low pass filter
-            data = gp.BesselFilter(data,rate,set_main['cutoff'])
+            if lpf:
+                data = gp.BesselFilter(data,rate,set_main['cutoff'])
             
             # analysis
-            peak,peak_av,peak_index = gp.peak(data,presamples,set['main']['peak_max'],set['main']['peak_x'],set['main']['peak_w'])
+            peak,peak_av,peak_index = gp.peak(data,presamples,set_main['peak_max'],set_main['peak_x'],set_main['peak_w'])
             rise,rise_10,rise_90 = gp.risetime(data,peak_av,peak_index,rate)
             decay,decay_10,decay_90 = gp.decaytime(data,peak_av,peak_index,rate)
             
@@ -245,6 +256,7 @@ if __name__ == '__main__':
                     set_main = set["main2"]
 
                 base,data = gp.baseline(data,presamples,set_main['base_x'],set_main['base_w'])
+                
                 filt = gp.BesselFilter(data,rate,set_main['cutoff'])
                 mv = gp.moving_average(filt,set_main["mv_w"])
                 mv_padding = np.pad(mv,(int(set_main["mv_w"]/2-1),int(set_main["mv_w"]/2)),"constant")
@@ -279,8 +291,9 @@ if __name__ == '__main__':
                     print(f'tau_decay : {tau_decay:.5f}' )
                     print(f'rSqared: {rSquared:.5f}')
 
-                #plt.plot(time,data,'o',markersize=1,label=f"rawdata_ch{ch}")
-                plt.plot(time,filt,'o',markersize=1,label=f"rawdata_ch{ch} filt")
+                plt.plot(time,data,'o',markersize=1,label=f"rawdata_ch{ch}")
+                if lpf:
+                    plt.plot(time,filt,'o',markersize=1,label=f"rawdata_ch{ch} filt")
                 if fitting_mode:
                     plt.plot(x_fit/rate,fitting,'-.',label = 'fitting')
                 #plt.plot(time,mv_padding,'o',markersize=1,label=f"rawdata_ch{ch} mv")
