@@ -1,3 +1,3 @@
 # getpara
 
-main.py 
+  main.py
