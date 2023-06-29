@@ -55,16 +55,16 @@ def main():
 
     # output
     
-    for i in post_ch:
-        ch = int(re.sub(r"\D", "", i))
-        pulse_output = f'{path}/CH{ch}_pulse/output/{output}'
-        if not os.path.exists(pulse_output):
+    
+    
+    pulse_output = f'{path}/CH{ch}_pulse/output/{output}'
+    if not os.path.exists(pulse_output):
+        os.makedirs(pulse_output,exist_ok=True)
+    else:
+        replace = input('Replace pulse output folder? (Yes -> [0], No (not save) -> [1]): ')
+        if replace =='0':
+            shutil.rmtree(pulse_output)
             os.makedirs(pulse_output,exist_ok=True)
-        else:
-            replace = input('Replace pulse output folder? (Yes -> [0], No (not save) -> [1]): ')
-            if replace =='0':
-                shutil.rmtree(pulse_output)
-                os.makedirs(pulse_output,exist_ok=True)
 
     output_noise = f'{path}/CH{ch}_noise/output/{output}'
     if not os.path.exists(output_noise):

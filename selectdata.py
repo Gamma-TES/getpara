@@ -75,13 +75,10 @@ def main():
             file.write(jsn)
 
     os.chdir(set["Config"]["path"])
-
     
-        
-            
-        
 
     output = f'CH{set["Config"]["channel"]}_pulse/output/{set["Config"]["output"]}'
+    print(output)
     df = pd.read_csv((f'{output}/output.csv'),index_col=0)
     rate,samples,presamples,threshold,ch = set["Config"]["rate"],set["Config"]["samples"],set["Config"]["presamples"],set["Config"]["threshold"],set["Config"]["channel"]
     time = gp.data_time(rate,samples)

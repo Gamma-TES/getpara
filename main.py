@@ -178,6 +178,9 @@ if __name__ == '__main__':
                     set_main = set["main"]
                 else:
                     set_main = set["main2"]
+            else:
+                set_main = set["main"]
+                trig = int(ch)
 
             base,data = gp.baseline(data,presamples,set_main['base_x'],set_main['base_w'])
 
@@ -260,7 +263,8 @@ if __name__ == '__main__':
                 filt = gp.BesselFilter(data,rate,set_main['cutoff'])
                 mv = gp.moving_average(filt,set_main["mv_w"])
                 mv_padding = np.pad(mv,(int(set_main["mv_w"]/2-1),int(set_main["mv_w"]/2)),"constant")
-                dif = gp.diff(mv_padding)*500
+                dif = gp.diff(mv_padding)*50000
+                dif = gp.diff(dif)
 
                 
                 risepoint = presamples#np.argmax(dif)
@@ -296,7 +300,8 @@ if __name__ == '__main__':
                     plt.plot(time,filt,'o',markersize=1,label=f"rawdata_ch{ch} filt")
                 if fitting_mode:
                     plt.plot(x_fit/rate,fitting,'-.',label = 'fitting')
-                #plt.plot(time,mv_padding,'o',markersize=1,label=f"rawdata_ch{ch} mv")
+                #plt.plot(time,mv_padding,'o',markersize=1,label=f"mv_ch{ch} mv")
+                plt.plot(time,dif,'o',markersize=1,label=f"difdif_ch{ch}")
                 plt.vlines(time[rise_10],ymin=0,ymax=filt[rise_10],color = 'blue',linestyle='-.')
                 plt.vlines(time[rise_90],ymin=0,ymax=filt[rise_90],color = 'blue',linestyle='-.')
                 plt.scatter(time[rise_10],filt[rise_10],color = 'blue',label='rise')
@@ -363,6 +368,7 @@ if __name__ == '__main__':
             # Graugh
             plt.plot(time,data,'o',markersize=1,label="rawdata")
             plt.plot(time,filt,'o',markersize=1,label = "filt")
+            plt.plot(time[:samples-set['main']['mv_w']+1],mv,label = "mv")
             plt.plot(time[presamples-set_main['base_x']:presamples-set_main['base_x']+set_main['base_w']],filt[presamples-set_main['base_x']:presamples-set_main['base_x']+set_main['base_w']],'--',label="base")
 
             if fitting_mode:
@@ -382,6 +388,8 @@ if __name__ == '__main__':
             plt.legend()
             plt.show()
             plt.cla()
+            gp.graugh('diff pulse',dif,time[:samples-set['main']['mv_w']+1])
+            plt.show()
             
 
         print("end")
