@@ -92,7 +92,7 @@ def select_condition(df,set):
                     df = df[df[param] == set['select'][i]]
                 elif sym == '!=':
                     df = df[df[param] != set['select'][i]]
-        except:
+        except :
             continue
     return df
  

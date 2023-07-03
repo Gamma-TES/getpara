@@ -64,17 +64,15 @@ def main():
     
     path = filedialog.askopenfilename(filetypes=[('index file','*.txt')])
 
-    selectdata = gp.loadIndex(path)
-    index_0= []
-    index_1= []
-    num = [re.findall(r'\d+', i)[2] for i in selectdata]
-    df_select_0 = df_0_over[df_0_over['number'].isin(num)]
-    df_select_1 = df_1_over[df_1_over['number'].isin(num)]
+    selectdata = [int(i) for i in gp.loadIndex(path)]
+ 
+    df_select_0 = df_0_over[df_0_over.index.isin(selectdata)]
+    df_select_1 = df_1_over[df_1_over.index.isin(selectdata)]
     
     x_select,y_select = df_select_0[para],df_select_1[para]
-
+    print(x_select)
     plt.scatter(x,y,s=2,alpha=0.5)
-    plt.scatter(x_select,y_select,s=2,alpha=1)
+    plt.scatter(x_select,y_select,s=2,alpha=1,color="red")
     plt.xlabel(f'channel {ch0}')
     plt.xlabel(f'channel {ch1}')
     plt.title(para)
