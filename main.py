@@ -213,10 +213,11 @@ if __name__ == '__main__':
                 else:
                     set_main = set["main2"]
 
-                base,data = gp.baseline(data,presamples,set_main['base_x'],set_main['base_w'])
-
+                
                 if set_main['cutoff'] > 0:
                     data = gp.BesselFilter(data,rate,set_main['cutoff'])
+                base,data = gp.baseline(data,presamples,set_main['base_x'],set_main['base_w'])
+
                 mv = gp.moving_average(data,set_main["mv_w"])
                 mv_padding = np.pad(mv,(int(set_main["mv_w"]/2-1),int(set_main["mv_w"]/2)),"constant")
                 dif = gp.diff(mv_padding)*50000

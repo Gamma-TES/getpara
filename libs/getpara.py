@@ -232,6 +232,8 @@ def FWHW(sigma):
 def fit_func(func):
     if func == 'monoExp':
         return monoExp
+    elif func == 'doubleExp':
+        return doubleExp
 
 #フィッティング
 def monoExp(x,m,t):
@@ -328,7 +330,7 @@ def pickSamples(df,*ax):
             y_picked.append(y[i])
         else:
             pass
-    PlotSelected(x,y,inside,x_picked,y_picked)
+    #PlotSelected(x,y,inside,x_picked,y_picked)
     return df[inside].index.values
 
 def extruct(df,*x):
