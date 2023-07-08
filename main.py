@@ -196,11 +196,12 @@ if __name__ == '__main__':
         num = int(input('Enter pulse number: '))
 
         # post mode plot some datas in one figure
+
+
         if post_mode:
             trig = trig_ch[int(num)-1]
             print(f'trigger: {trig}')
 
-            fig = plt.figure(figsize=(10,5))
             
             for i in post_ch:
                 ch = int(re.sub(r"\D", "", i))
@@ -213,6 +214,7 @@ if __name__ == '__main__':
                     set_main = set["main2"]
 
                 base,data = gp.baseline(data,presamples,set_main['base_x'],set_main['base_w'])
+
                 if set_main['cutoff'] > 0:
                     data = gp.BesselFilter(data,rate,set_main['cutoff'])
                 mv = gp.moving_average(data,set_main["mv_w"])
@@ -220,21 +222,11 @@ if __name__ == '__main__':
                 dif = gp.diff(mv_padding)*50000
                 dif = gp.diff(dif)
 
-                
-                risepoint = presamples#np.argmax(dif)
-                peak,peak_av,peak_index = gp.peak(data,risepoint,set_main['peak_max'],set_main['peak_x'],set_main['peak_w'])
+                    
+                peak,peak_av,peak_index = gp.peak(data,presamples,set_main['peak_max'],set_main['peak_x'],set_main['peak_w'])
                 rise,rise_10,rise_90 = gp.risetime(data,peak_av,peak_index,rate)
                 decay,decay_10,decay_90 = gp.decaytime(data,peak_av,peak_index,rate)
 
-                if fitting_mode:
-                    x_fit = np.arange(presamples-5,samples,0.1)
-                    popt,rSquared = gp.fitExp(gp.fit_func(set_main['fit_func']),data,presamples+set_main['fit_x'],set_main['fit_w'],p0 = set_main['fit_p0'])
-                    tau_rise = 0
-                    tau_decay = 1/popt[1]/rate
-                    fit_func = gp.fit_func(set_main["fit_func"])
-                    fitting = fit_func(x_fit,*popt)
-                    #rise_fit = gp.risetime(fitting,np.max(fitting),np.argmax(fitting),rate)
-                
                 print('\n---------------------------')
                 print(path)
                 print(f'samples : {len(data)}')
@@ -245,6 +237,17 @@ if __name__ == '__main__':
                 print(f'decay : {decay:.5f}')
 
                 if fitting_mode:
+                    x_fit = np.arange(presamples-5,samples,0.1)
+                    popt,rSquared = gp.fitExp(gp.fit_func(set_main['fit_func']),data,presamples+set_main['fit_x'],set_main['fit_w'],p0 = set_main['fit_p0'])
+                    if set_main['fit_func'] == "monoExp":
+                        tau_rise = 0
+                        tau_decay = 1/popt[1]/rate
+                    if set_main['fit_func'] == "doubleExp":
+                        tau_rise = popt[1]/rate
+                        tau_decay = popt[3]/rate
+                    fit_func = gp.fit_func(set_main["fit_func"])
+                    fitting = fit_func(x_fit,*popt)
+
                     print(f'tau_rise : {tau_rise:.5f}' )
                     print(f'tau_decay : {tau_decay:.5f}' )
                     print(f'rSqared: {rSquared:.5f}')
@@ -258,12 +261,11 @@ if __name__ == '__main__':
                     plt.plot(x_fit/rate,fitting,'-.',label = 'fitting')
                 #plt.plot(time,mv_padding,'o',markersize=1,label=f"mv_ch{ch} mv")
                 #plt.plot(time,dif,'o',markersize=1,label=f"difdif_ch{ch}")
-                plt.vlines(time[rise_10],ymin=0,ymax=data[rise_10],color = 'blue',linestyle='-.')
-                plt.vlines(time[rise_90],ymin=0,ymax=data[rise_90],color = 'blue',linestyle='-.')
+                plt.plot(time[rise_10:rise_10],data[rise_10:rise_10],'-.',color='royalblue',label="rise")
                 plt.scatter(time[rise_10],data[rise_10],color = 'blue',label='rise')
                 plt.scatter(time[rise_90],data[rise_90],color = 'blue')
                 plt.scatter(time[peak_index],peak_av, color='cyan', label ='peak',zorder = 2)
-                plt.scatter(time[risepoint],data[risepoint], color='magenta', label ='risepoint',zorder = 2)
+                plt.scatter(time[presamples],data[presamples], color='magenta', label ='risepoint',zorder = 2)
                 plt.legend()
 
             
@@ -273,6 +275,7 @@ if __name__ == '__main__':
             plt.title(f'rawdata {num}.')
             plt.show()
             plt.cla()
+
             
             
             #gp.graugh('diff pulse',dif,time[:samples-set['main']['mv_w']+1])
@@ -294,17 +297,6 @@ if __name__ == '__main__':
             peak,peak_av,peak_index = gp.peak(data,presamples,set_main['peak_max'],set_main['peak_x'],set_main['peak_w'])
             rise,rise_10,rise_90 = gp.risetime(data,peak_av,peak_index,rate)
             decay,decay_10,decay_90 = gp.decaytime(data,peak_av,peak_index,rate)
-            print(decay_10,decay_90)
-            
-            # Fitting
-            if fitting_mode:
-                x_fit = np.arange(presamples-5,samples,0.1)
-                popt,rSquared = gp.fitExp(gp.doubleExp,data,presamples+set_main['fit_x'],set_main['fit_w'],p0 = set_main['fit_p0'])
-                tau_rise = popt[1]/rate
-                tau_decay = popt[3]/rate
-                fitting = gp.doubleExp(x_fit,*popt)
-                #rise_fit = gp.risetime(fitting,np.max(fitting),np.argmax(fitting),rate)
-
 
             # Console output
             print('\n---------------------------')
@@ -315,12 +307,23 @@ if __name__ == '__main__':
             print(f'peak index : {peak_index:.5f}')
             print(f'rise : {rise:.5f}')
             print(f'decay : {decay:.5f}')
-
+            
+            # Fitting
             if fitting_mode:
+                x_fit = np.arange(presamples-5,samples,0.1)
+                popt,rSquared = gp.fitExp(gp.fit_func(set_main['fit_func']),data,presamples+set_main['fit_x'],set_main['fit_w'],p0 = set_main['fit_p0'])
+                if set_main['fit_func'] == "monoExp":
+                    tau_rise = 0
+                    tau_decay = 1/popt[1]/rate
+                if set_main['fit_func'] == "doubleExp":
+                    tau_rise = popt[1]/rate
+                    tau_decay = popt[3]/rate
+                fit_func = gp.fit_func(set_main["fit_func"])
+                fitting = fit_func(x_fit,*popt)
+
                 print(f'tau_rise : {tau_rise:.5f}' )
                 print(f'tau_decay : {tau_decay:.5f}' )
                 print(f'rSqared: {rSquared:.5f}')
-
 
 
             # Graugh
@@ -329,16 +332,14 @@ if __name__ == '__main__':
             else:
                 plt.plot(time,data,'o',markersize=1,label=f"rawdata_ch{ch}")
             if fitting_mode:
-                plt.plot(x_fit/rate,fitting,'-.',label = 'fitting')
+                plt.plot(x_fit/rate,fitting,'-.',color="skyblue",label = 'fitting')
             #plt.plot(time[:samples-set['main']['mv_w']+1],mv,label = "mv")
-            plt.plot(time[presamples-set_main['base_x']:presamples-set_main['base_x']+set_main['base_w']],data[presamples-set_main['base_x']:presamples-set_main['base_x']+set_main['base_w']],'--',label="base")
-
-            plt.vlines(time[rise_10],ymin=0,ymax=data[rise_10],color = 'black',linestyle='-.')
-            plt.vlines(time[rise_90],ymin=0,ymax=data[rise_90],color = 'black',linestyle='-.')
-            plt.scatter(time[rise_10],data[rise_10],color = 'black',label='rise')
-            plt.scatter(time[rise_90],data[rise_90],color = 'black')
-            plt.scatter(time[peak_index],peak_av, color='red', label ='peak',zorder = 2)
-            plt.scatter(time[presamples],data[presamples], color='magenta', label ='risepoint',zorder = 2)
+            plt.plot(time[presamples-set_main['base_x']:presamples-set_main['base_x']+set_main['base_w']],data[presamples-set_main['base_x']:presamples-set_main['base_x']+set_main['base_w']],'-',linewidth=2,color="lightpink",label="base")
+            plt.plot(time[rise_10:rise_10],data[rise_10:rise_10],'-',color='royalblue',label="rise")
+            plt.scatter(time[rise_10],data[rise_10],color = 'royalblue',label='rise')
+            plt.scatter(time[rise_90],data[rise_90],color = 'royalblue')
+            plt.scatter(time[peak_index],peak_av, color='orange', label ='peak',zorder = 2)
+            plt.scatter(time[presamples],data[presamples], color='violet', label ='risepoint',zorder = 2)
         
             plt.xlabel("time(s)")
             plt.ylabel("volt(V)")
