@@ -29,46 +29,9 @@ import pprint
 import sys
 import re
 import matplotlib.cm as cm
+import tqdm
 
 
-#---Initialize setting------------------------------------------------
-
-para = {"main": {
-        "base_x": 1000,
-        "base_w": 500,
-        "peak_max": 300,
-        "peak_x": 3,
-        "peak_w": 10,
-        "fit_func": "monoExp",
-        "fit_x": 5000,
-        "fit_w": 50000,
-        "fit_p0": [
-            0.1,
-            1e-05
-        ],
-        "mv_w": 100,
-        "cutoff": 10000.0
-    }
-}
-para2 = {"main2": {
-        "base_x": 1000,
-        "base_w": 500,
-        "peak_max": 4000,
-        "peak_x": 100,
-        "peak_w": 500,
-        "fit_func": "monoExp",
-        "fit_x": 5000,
-        "fit_w": 50000,
-        "fit_p0": [
-            0.1,
-            1e-05
-        ],
-        "mv_w": 100,
-        "cutoff": 10000
-    }
-}
-
-#------------------------------------------------
 
 # run
 if __name__ == '__main__':
@@ -78,21 +41,13 @@ if __name__ == '__main__':
     ax.append(0)
     
     # add main option at setting.json
-    set = gp.loadJson()
-    if not 'main' in set:
-        set.update(para)
-        jsn = json.dumps(set,indent=4)
-        with open("setting.json", 'w') as file:
-            file.write(jsn)
+    with open("setting.json") as f:
+        set = json.load(f)
+
     
     # if post mode, add main2 option
     if '-p' in ax:
         post_mode = 1
-        if not 'main2' in set:
-            set.update(para2)
-            jsn = json.dumps(set,indent=4)
-            with open("setting.json", 'w') as file:
-                file.write(jsn)
     else:
         post_mode = 0
 
@@ -102,10 +57,6 @@ if __name__ == '__main__':
     else:
         fitting_mode = 0
 
-    if '-l' in ax:
-        lpf = 1
-    else:
-        lpf = 0
 
     # get setting from setting.json
     set_config = set["Config"]
@@ -118,12 +69,9 @@ if __name__ == '__main__':
 
     # analysis output path
     output = f'CH{ch}_pulse/output/{set_config["output"]}'
-    
+
     # change directry
     os.chdir(path)
-    jsn = json.dumps(set,indent=4)
-    with open(f'{output}/setting.json', 'w') as file:
-        file.write(jsn)
 
 
     # -- PoST Mode setting----------------
@@ -134,8 +82,10 @@ if __name__ == '__main__':
         print(RED+'PoST mode'+END)
         trig_ch = np.loadtxt('channel.txt')
         post_ch = glob.glob('CH*_pulse')
-        print(f"ch0 triggered: {np.count_nonzero(trig_ch==0)} count")
-        print(f"ch1 triggered: {np.count_nonzero(trig_ch==1)} count")
+        for i in post_ch:
+            ch = int(re.sub(r"\D", "", i))
+            print(f"CH{ch} triggered: {np.count_nonzero(trig_ch==ch)} count")
+        
         
 
     # -- test mode ------------------------
@@ -143,7 +93,10 @@ if __name__ == '__main__':
     if "-t" in ax:
         print("test mode")
         path_raw = natsorted(glob.glob(f'CH{ch}_pulse/rawdata/CH{ch}_*.dat'))
-        arr = np.arange(len(path_raw)) 
+        arr = np.arange(len(path_raw))
+        seed = int(input("seed: "))
+        np.random.seed(seed)
+        set['main']['seed'] = seed
         np.random.shuffle(arr) # shuffle array
         length = int(input('length: ')) # length of array
         arr_select = arr[:length]
@@ -153,6 +106,7 @@ if __name__ == '__main__':
             extruct.append(path)
         path_data = natsorted(extruct)
         num_data = [re.findall(r'\d+', os.path.basename(i))[1] for i in path_data]
+        ax.append('-a')
     # --------------------------------------
 
     # -- product mode ----------------------
@@ -162,14 +116,17 @@ if __name__ == '__main__':
         print(f"{len(path_data)} pulses")
 
 
+    jsn = json.dumps(set,indent=4)
+    with open(f'{output}/setting.json', 'w') as file:
+        file.write(jsn)
+
     # --- all Samples -----------------------------------------------------
     if '-a' in ax:
 
         data_array = []
         cnt = 0
-        for path in path_data:
+        for path in tqdm.tqdm(path_data):
             num =  re.findall(r'\d+', os.path.basename(path))[1]
-            print(num)
             data = gp.loadbi(path)
 
             if post_mode:
@@ -200,7 +157,7 @@ if __name__ == '__main__':
 
 
             # low pass filter
-            if lpf:
+            if set_main['cutoff'] > 0:
                 data = gp.BesselFilter(data,rate,set_main['cutoff'])
             
             # analysis
@@ -228,10 +185,7 @@ if __name__ == '__main__':
                     index=num_data)
 
         # output
-        if "-t" in ax:
-            df.to_csv(os.path.join(output,"output_test.csv"))
-        else:
-            df.to_csv(os.path.join(output,"output.csv"))
+        df.to_csv(os.path.join(output,"output.csv"))
         
         print('end\n-------------------------------------')
     # -------------------------------------------------------------------------------------------------
@@ -259,18 +213,18 @@ if __name__ == '__main__':
                     set_main = set["main2"]
 
                 base,data = gp.baseline(data,presamples,set_main['base_x'],set_main['base_w'])
-                
-                filt = gp.BesselFilter(data,rate,set_main['cutoff'])
-                mv = gp.moving_average(filt,set_main["mv_w"])
+                if set_main['cutoff'] > 0:
+                    data = gp.BesselFilter(data,rate,set_main['cutoff'])
+                mv = gp.moving_average(data,set_main["mv_w"])
                 mv_padding = np.pad(mv,(int(set_main["mv_w"]/2-1),int(set_main["mv_w"]/2)),"constant")
                 dif = gp.diff(mv_padding)*50000
                 dif = gp.diff(dif)
 
                 
                 risepoint = presamples#np.argmax(dif)
-                peak,peak_av,peak_index = gp.peak(filt,risepoint,set_main['peak_max'],set_main['peak_x'],set_main['peak_w'])
-                rise,rise_10,rise_90 = gp.risetime(filt,peak_av,peak_index,rate)
-                decay,decay_10,decay_90 = gp.decaytime(filt,peak_av,peak_index,rate)
+                peak,peak_av,peak_index = gp.peak(data,risepoint,set_main['peak_max'],set_main['peak_x'],set_main['peak_w'])
+                rise,rise_10,rise_90 = gp.risetime(data,peak_av,peak_index,rate)
+                decay,decay_10,decay_90 = gp.decaytime(data,peak_av,peak_index,rate)
 
                 if fitting_mode:
                     x_fit = np.arange(presamples-5,samples,0.1)
@@ -295,19 +249,21 @@ if __name__ == '__main__':
                     print(f'tau_decay : {tau_decay:.5f}' )
                     print(f'rSqared: {rSquared:.5f}')
 
-                plt.plot(time,data,'o',markersize=1,label=f"rawdata_ch{ch}")
-                if lpf:
-                    plt.plot(time,filt,'o',markersize=1,label=f"rawdata_ch{ch} filt")
+                
+                if set_main['cutoff'] > 0:
+                    plt.plot(time,data,'o',markersize=1,label=f"rawdata_ch{ch} filt")
+                else:
+                    plt.plot(time,data,'o',markersize=1,label=f"rawdata_ch{ch}")
                 if fitting_mode:
                     plt.plot(x_fit/rate,fitting,'-.',label = 'fitting')
                 #plt.plot(time,mv_padding,'o',markersize=1,label=f"mv_ch{ch} mv")
-                plt.plot(time,dif,'o',markersize=1,label=f"difdif_ch{ch}")
-                plt.vlines(time[rise_10],ymin=0,ymax=filt[rise_10],color = 'blue',linestyle='-.')
-                plt.vlines(time[rise_90],ymin=0,ymax=filt[rise_90],color = 'blue',linestyle='-.')
-                plt.scatter(time[rise_10],filt[rise_10],color = 'blue',label='rise')
-                plt.scatter(time[rise_90],filt[rise_90],color = 'blue')
+                #plt.plot(time,dif,'o',markersize=1,label=f"difdif_ch{ch}")
+                plt.vlines(time[rise_10],ymin=0,ymax=data[rise_10],color = 'blue',linestyle='-.')
+                plt.vlines(time[rise_90],ymin=0,ymax=data[rise_90],color = 'blue',linestyle='-.')
+                plt.scatter(time[rise_10],data[rise_10],color = 'blue',label='rise')
+                plt.scatter(time[rise_90],data[rise_90],color = 'blue')
                 plt.scatter(time[peak_index],peak_av, color='cyan', label ='peak',zorder = 2)
-                plt.scatter(time[risepoint],filt[risepoint], color='magenta', label ='risepoint',zorder = 2)
+                plt.scatter(time[risepoint],data[risepoint], color='magenta', label ='risepoint',zorder = 2)
                 plt.legend()
 
             
@@ -330,12 +286,14 @@ if __name__ == '__main__':
             base,data = gp.baseline(data,presamples,set_main['base_x'],set_main['base_w'])
             mv = gp.moving_average(data,set_main['mv_w'])
             dif  = gp.diff(mv)
-            filt = gp.BesselFilter(data,rate,set_main['cutoff'])
+
+            if set_main['cutoff'] > 0:
+                data = gp.BesselFilter(data,rate,set_main['cutoff'])
 
             # Analysis
-            peak,peak_av,peak_index = gp.peak(filt,presamples,set_main['peak_max'],set_main['peak_x'],set_main['peak_w'])
-            rise,rise_10,rise_90 = gp.risetime(filt,peak_av,peak_index,rate)
-            decay,decay_10,decay_90 = gp.decaytime(filt,peak_av,peak_index,rate)
+            peak,peak_av,peak_index = gp.peak(data,presamples,set_main['peak_max'],set_main['peak_x'],set_main['peak_w'])
+            rise,rise_10,rise_90 = gp.risetime(data,peak_av,peak_index,rate)
+            decay,decay_10,decay_90 = gp.decaytime(data,peak_av,peak_index,rate)
             print(decay_10,decay_90)
             
             # Fitting
@@ -366,20 +324,21 @@ if __name__ == '__main__':
 
 
             # Graugh
-            plt.plot(time,data,'o',markersize=1,label="rawdata")
-            plt.plot(time,filt,'o',markersize=1,label = "filt")
-            plt.plot(time[:samples-set['main']['mv_w']+1],mv,label = "mv")
-            plt.plot(time[presamples-set_main['base_x']:presamples-set_main['base_x']+set_main['base_w']],filt[presamples-set_main['base_x']:presamples-set_main['base_x']+set_main['base_w']],'--',label="base")
-
+            if set_main['cutoff'] > 0:
+                plt.plot(time,data,'o',markersize=1,label=f"rawdata_ch{ch} data")
+            else:
+                plt.plot(time,data,'o',markersize=1,label=f"rawdata_ch{ch}")
             if fitting_mode:
                 plt.plot(x_fit/rate,fitting,'-.',label = 'fitting')
+            #plt.plot(time[:samples-set['main']['mv_w']+1],mv,label = "mv")
+            plt.plot(time[presamples-set_main['base_x']:presamples-set_main['base_x']+set_main['base_w']],data[presamples-set_main['base_x']:presamples-set_main['base_x']+set_main['base_w']],'--',label="base")
 
-            plt.vlines(time[rise_10],ymin=0,ymax=filt[rise_10],color = 'black',linestyle='-.')
-            plt.vlines(time[rise_90],ymin=0,ymax=filt[rise_90],color = 'black',linestyle='-.')
-            plt.scatter(time[rise_10],filt[rise_10],color = 'black',label='rise')
-            plt.scatter(time[rise_90],filt[rise_90],color = 'black')
+            plt.vlines(time[rise_10],ymin=0,ymax=data[rise_10],color = 'black',linestyle='-.')
+            plt.vlines(time[rise_90],ymin=0,ymax=data[rise_90],color = 'black',linestyle='-.')
+            plt.scatter(time[rise_10],data[rise_10],color = 'black',label='rise')
+            plt.scatter(time[rise_90],data[rise_90],color = 'black')
             plt.scatter(time[peak_index],peak_av, color='red', label ='peak',zorder = 2)
-            plt.scatter(time[presamples],filt[presamples], color='magenta', label ='risepoint',zorder = 2)
+            plt.scatter(time[presamples],data[presamples], color='magenta', label ='risepoint',zorder = 2)
         
             plt.xlabel("time(s)")
             plt.ylabel("volt(V)")

@@ -56,7 +56,7 @@ def main():
 
     amp_spe = np.sqrt(model[:int(samples/2)+1])*int(set['Config']['eta'])*1e+6*np.sqrt(1/rate/samples)
 
-    np.savetxt(f'{output}/modelnoise.txt',model)
+    np.savetxt(f'{output}/modelnoise.txt',model) 
     
     
 

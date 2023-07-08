@@ -12,34 +12,56 @@ from tkinter import filedialog
 import sys
 import re
 
+#---Initialize setting------------------------------------------------
+main_para = {"main": {
+        "base_x": 1000,
+        "base_w": 500,
+        "peak_max": 300,
+        "peak_x": 3,
+        "peak_w": 10,
+        "fit_func": "monoExp",
+        "fit_x": 5000,
+        "fit_w": 50000,
+        "fit_p0": [
+            0.1,
+            1e-05
+        ],
+        "mv_w": 100,
+        "cutoff": 10000.0
+    }
+}
+
+
+main2_para = {"main2": {
+        "base_x": 1000,
+        "base_w": 500,
+        "peak_max": 4000,
+        "peak_x": 100,
+        "peak_w": 500,
+        "fit_func": "monoExp",
+        "fit_x": 5000,
+        "fit_w": 50000,
+        "fit_p0": [
+            0.1,
+            1e-05
+        ],
+        "mv_w": 100,
+        "cutoff": 10000
+    }
+}
+
 # Json形式へ変更
 
-def loadJson():
-    with open("setting.json") as f:
-        jsn = json.load(f)
-    return jsn
-
 def main():
-
-    ax = sys.argv
-
-    if len(ax) > 1:
-        if ax[1] == "-p":
-            print("Post mode")
-        ch = ax[2:]
-        print(ch)
-    
-
     path = filedialog.askdirectory()
-    ch = input('ch: ')
     output = input("output name:")
-    post_ch = glob.glob(f'{path}/CH*_pulse')
+    post_ch = glob.glob(f'{path}/CH*')
 
     setting = np.loadtxt(f"{path}/Setting.txt",skiprows = 10)
     setting_json = {
         "Config":{
             "path" : path,
-            "channel":ch,
+            "channel":0,
             "rate" : int(setting[2]),
             "samples" : int(setting[4]),
             "presamples" : int(setting[5]),
@@ -48,35 +70,22 @@ def main():
         }
         
     }
-    set = json.dumps(setting_json,indent=4)
+
+    setting_json.update(main_para)
+    if len(post_ch) > 2:
+        setting_json.update(main2_para)
     
+    jsn = json.dumps(setting_json,indent=4)
+
+    # current directry
     with open("setting.json", 'w') as file:
-        file.write(set)
+        file.write(jsn)
 
-    # output
-    
-    
-    
-    pulse_output = f'{path}/CH{ch}_pulse/output/{output}'
-    if not os.path.exists(pulse_output):
-        os.makedirs(pulse_output,exist_ok=True)
-    else:
-        replace = input('Replace pulse output folder? (Yes -> [0], No (not save) -> [1]): ')
-        if replace =='0':
-            shutil.rmtree(pulse_output)
-            os.makedirs(pulse_output,exist_ok=True)
+    for i in post_ch:
+        os.makedirs(f'{i}/output/{output}',exist_ok=True)
+        with open(f'{i}/output/{output}/setting.json', 'w') as file:
+            file.write(jsn)
 
-    output_noise = f'{path}/CH{ch}_noise/output/{output}'
-    if not os.path.exists(output_noise):
-        os.makedirs(output_noise,exist_ok=True)
-    else:
-        replace = input('Replace noise output folder? (Yes -> [0], No (not save) -> [1]): ')
-        if replace =='0':
-            shutil.rmtree(output_noise)
-            os.makedirs(output_noise,exist_ok=True)
-
-    set = json.loads(set)
-    print(set)
     RED = '\033[33m'
     END = '\033[0m'
     print(RED + "Hello GetPara!" + END)
