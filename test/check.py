@@ -6,8 +6,6 @@ import glob
 import os
 import shutil
 from natsort import natsorted
-import libs.getpara as gp
-import libs.fft_spectrum as sp
 import json
 import pprint
 import sys

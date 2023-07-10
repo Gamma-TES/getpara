@@ -18,26 +18,40 @@ import matplotlib.pyplot as plt
 import libs.getpara as gp
 import pandas as pd
 from scipy.optimize import curve_fit
+import sys
 
 #-------------- ガウスフィッティング ----------------
+BINS = 2048
 
 def gausse(x,A,mu,sigma):
     return A*np.exp(-(x-mu)**2/(2.0*sigma**2))
 
 def main():
+
+	para = 'height_opt_temp'
 	set = gp.loadJson()
 	ch,path = set["Config"]["channel"],set["Config"]["path"]
 	output = f'CH{set["Config"]["channel"]}_pulse/output/{set["Config"]["output"]}'
 	
 	os.chdir(path)
 	df = pd.read_csv((f'{output}/output.csv'),index_col=0)
-	df = gp.select_condition(df,set)
-	energy = float(input('input Energy(keV): '))
-	min = float(input('min: '))
-	max = float(input('max: '))
-	bins = int(input('bins: '))
+	df_sel = gp.select_condition(df,set)
+
+	plt.hist(df_sel[para], bins = BINS)
+	plt.xlabel('Channel',fontsize = 14)
+	plt.ylabel('Count',fontsize = 14)
+	plt.tick_params(axis='both', which='both', direction='in',\
+                    bottom=True, top=True, left=True, right=True)
+	plt.grid(True, which='major', color='black', linestyle='-', linewidth=0.2)
+	#plt.show()
+
+
+	energy = 1332#float(input('input Energy(keV): '))
+	min = 14.40#float(input('min: '))
+	max = 14.46#float(input('max: '))
+	bins = 20#int(input('bins: '))
 	
-	pulseheight = df[(df['height_opt_temp'] > min)&(df['height_opt_temp'] < max)]
+	pulseheight = df_sel[(df_sel['height_opt_temp'] > min)&(df_sel['height_opt_temp'] < max)]
 	hist, bin_edges = np.histogram(pulseheight['height_opt_temp'], bins=bins)
 	p0 = [np.max(hist),(max-min)/6,bin_edges[np.argmax(hist)]]
 	
@@ -48,18 +62,31 @@ def main():
 	fwhw = gp.FWHW(sigma)
 	dE = energy*fwhw/mu
 
-	print(f'\nFWHW: {fwhw}\nEnergy resoltion: {dE} keV')
+	if os.path.exists(f'{output}/{set["select"]["output"]}/E_resolution.csv'):
+		df = pd.read_csv(f'{output}/{set["select"]["output"]}/E_resolution.csv',index_col=0)
+	else:
+		df = pd.DataFrame([],\
+        columns=["energy","A","mu","sigma","fwhw","dE"])
+	print(df)
+	df2 = pd.DataFrame([energy,a,mu,sigma,fwhw,dE],\
+        columns=["energy","A","mu","sigma","fwhw","dE"])
+	df = pd.concat([df,df2],axis=0)
+	print(df)
+	df.to_csv(f'{output}/{set["select"]["output"]}/E_resolution.csv',index=False)
 	
 
-	plt.hist(pulseheight['height_opt_temp'], bins =bins)
-	plt.title(f'dE = {dE:.3f}keV @{energy} keV')
+	print(f'\nA: {a}\nmu: {mu}\nsigma: {sigma}')
+	print(f'\nFWHW: {fwhw}\nEnergy resoltion: {dE} keV')
+
+	plt.hist(pulseheight[para], bins =bins)
+	plt.title(f'dE = {dE:.3f}keV @{int(energy)} keV')
 	plt.plot(x_fit, y_fit, color='red',linewidth=1,linestyle='-')
 	plt.xlabel('Channel',fontsize = 14)
 	plt.ylabel('Count',fontsize = 14)
 	plt.tick_params(axis='both', which='both', direction='in',\
                     bottom=True, top=True, left=True, right=True)
 	plt.grid(True, which='major', color='black', linestyle='-', linewidth=0.2)
-	plt.savefig(f'{output}/select/E_resolution_{energy}.png')
+	plt.savefig(f'{output}/{set["select"]["output"]}/E_{int(energy)}keV.png')
 	plt.show()
 
 

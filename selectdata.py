@@ -181,7 +181,8 @@ def main():
 			for num in tqdm.tqdm(picked):
 				path = f'CH{ch}_pulse/rawdata/CH{ch}_{num}.dat'
 				data = gp.loadbi(path)
-				base,data = gp.baseline(data,presamples,1000,500)
+				base = df.at[path,"base"]
+				data -=base
 				if mode == 'post':
 					trig = trig_ch[int(num)-1]
 					if trig == int(ch):
@@ -245,7 +246,8 @@ def main():
 				data = gp.loadbi(path)
 				if set_main['cutoff'] > 0:
 					data = gp.BesselFilter(data,rate,set_main['cutoff'])
-				base,data = gp.baseline(data,presamples,1000,500)
+				base = df.at[path,"base"]
+				data -=base
 				array.append(data)
 			av = np.mean(array,axis=0)
 
@@ -269,9 +271,8 @@ def main():
 	
 	
 	jsn = json.dumps(set,indent=4)
-	print(os.getcwd())
-	with open(f"{os.getcwd()}/setting.json", 'w') as file:
-			file.write(jsn)
+	with open(f"{os.path.dirname(__file__)}/setting.json", 'w') as file:
+		file.write(jsn)
 	with open(f'{output_f}/setting.json', 'w') as file:
 		file.write(jsn)
 	df.to_csv(f'{output}/output.csv')
