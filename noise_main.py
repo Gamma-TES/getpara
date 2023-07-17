@@ -27,6 +27,7 @@ def main():
     os.chdir(set["Config"]["path"])
     ch = set['Config']['channel']
     rate,samples= set["Config"]["rate"],set["Config"]["samples"]
+    eta = set["Config"]["eta"]*1e-6
     time = gp.data_time(rate,samples)
     fq = np.arange(0,rate,rate/samples)
     output = f'CH{set["Config"]["channel"]}_noise/output/{set["Config"]["output"]}'
@@ -46,7 +47,10 @@ def main():
             if (base <= -3 and base >= 3) or peak >= float(set['Config']['threshold']):
                 print("Not noise")
                 continue
-            amp = np.abs(fft.fft(data_ba))**2
+            amp = np.abs(data/(samples/2))
+            df = rate/samples
+            power = amp**2/df
+            amp = np.sqrt(power)*eta
             model = model + amp
 
             print(i)
@@ -54,7 +58,7 @@ def main():
             continue
     model = model/len(noise)
 
-    amp_spe = np.sqrt(model[:int(samples/2)+1])*int(set['Config']['eta'])*1e+6*np.sqrt(1/rate/samples)
+    amp_spe = model[:int(samples/2)+1]*eta
 
     np.savetxt(f'{output}/modelnoise.txt',model) 
     
@@ -64,7 +68,7 @@ def main():
     plt.plot(fq[:int(samples/2)+1],amp_spe,linestyle = '-',linewidth = 0.7)
     plt.loglog()
     plt.xlabel('Frequency[Hz]')
-    plt.ylabel('Intensity[pA/kHz$^{1/2}$]')
+    plt.ylabel('Intensity[pA/Hz$^{1/2}$]')
     plt.grid()
     plt.savefig(f'{output}/modelnoise.png')
     plt.show()

@@ -67,6 +67,18 @@ def loadJson():
         jsn = json.load(f)
     return jsn
 
+# load PHITS .out file
+# start, end is row you wanna extruct
+def loadPHITS(path,start,end,column):
+    with open(path,'r') as f:
+        n = 0
+        electron = []
+        for i in f.readlines():
+            if n > start-2 and n < end:
+                ele = i.split("  ")[1:][column]
+                electron.append(float(ele))
+            n += 1
+    return electron
 
 def loadIndex(path):
     index = []
