@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 import scipy.fftpack as fft
 from scipy.optimize import curve_fit
-import libs.getpara as gp
+import getpara as gp
 import glob
 from natsort import natsorted
 import os
@@ -28,12 +28,11 @@ def func(x,a,b):
     return a * x + b
 
 def main():
-    path = sys.argv[1]
-    temp = sys.argv[2]
-    print(path)
+    path = input('path: ')
     os.chdir(path)
+    temp = input('temperature [mK]: ')
 
-    files = natsorted(glob.glob(f"{temp}/*.dat"))
+    files = natsorted(glob.glob(f"{temp}mK/*.dat"))
     I_bias = [] 
     V_out = []
     for i in files:

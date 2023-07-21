@@ -140,12 +140,12 @@ def risetime(data,peak,peak_index,rate):
     rise_10 = 0
     
     for i in reversed(range(0,peak_index)):
-        if data[i] <= peak*0.9:
+        if data[i] <= peak*0.8:
             rise_90 = i
             break
 
     for j in reversed(range(0,rise_90)):
-        if data[j] <= peak*0.1:
+        if data[j] <= peak*0.2:
             rise_10 = j
             break
     
@@ -164,11 +164,11 @@ def decaytime(data,peak,peak_index,rate):
     decay_90 = 0
     decay_10 = 0
     for i in range(peak_index,len(data)):
-        if data[i] <= peak*1:
+        if data[i] <= peak*0.9:
             decay_90 = i
             break
     for j in range(decay_90,len(data)):
-        if data[j] <= peak*0.7:
+        if data[j] <= peak*0.1:
             decay_10 = j
             break
     
@@ -353,7 +353,7 @@ def extruct(df,*x):
 
 def ginput(x,y,x_ax,y_ax):
 	plt.plot(x,y,'bo',markersize=1)
-	plt.ylim(0,2)
+	#plt.ylim(0,2)
 	plt.xlabel(x_ax)
 	plt.ylabel(y_ax)
 	plt.grid()

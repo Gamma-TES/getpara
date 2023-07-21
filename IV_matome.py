@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 import scipy.fftpack as fft
 from scipy.optimize import curve_fit
-import libs.getpara as gp
+import getpara as gp
 import glob
 from natsort import natsorted
 import os
@@ -23,8 +23,7 @@ def func(x,a,b):
 
 
 def main():
-    path = sys.argv[1]
-    
+    path = input('path: ')
     os.chdir(path)
 
     files = natsorted(glob.glob('output/*.txt'))

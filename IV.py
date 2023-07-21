@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 import scipy.fftpack as fft
 from scipy.optimize import curve_fit
-import libs.getpara as gp
+import getpara as gp
 import glob
 from natsort import natsorted
 import os
@@ -31,7 +31,8 @@ def main():
     ax = sys.argv
     ax.pop(0)
     
-    os.chdir(ax[0])
+    path = input('path: ')
+    os.chdir(path)
 
 
     if not os.path.exists('output'):
