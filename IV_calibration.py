@@ -89,9 +89,11 @@ def main():
             V_out = np.delete(V_out,slice(np.where(I_bias==start)[0][0],np.where(I_bias==stop)[0][0] + 1 ))
             I_bias = np.delete(I_bias,slice(np.where(I_bias==start)[0][0],np.where(I_bias==stop)[0][0] + 1 )) 
         elif mode == 3:
+            
+            diff =  V_out[np.where(I_bias==start)[0]-1] - V_out[np.where(I_bias==start)][0]
+            print(f"expect: {diff}")
             change = float(input('change:'))
-            diff =  func(start,*popt) - V_out[np.where(I_bias==start)][0]
-            V_out[np.where(I_bias==start)[0][0]:np.where(I_bias==stop)[0][0] + 1 ] += diff
+            V_out[np.where(I_bias==start)[0][0]:np.where(I_bias==stop)[0][0] + 1 ] += change
         else:
             exit()
         

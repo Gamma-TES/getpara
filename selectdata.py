@@ -175,14 +175,14 @@ def main():
 			picked_data = gp.loadbi(path)
 			print(df_clear.loc[path]) 
 			gp.graugh(path,picked_data,time)
+			gp.graugh_condition(set)
 			plt.show()
 		else:
 			# average pulse
 			for num in tqdm.tqdm(picked):
 				path = f'CH{ch}_pulse/rawdata/CH{ch}_{num}.dat'
 				data = gp.loadbi(path)
-				base = df.at[path,"base"]
-				data -=base
+				base,data = gp.baseline(data,presamples,set_main['base_x'],set_main['base_w'])
 				if mode == 'post':
 					trig = trig_ch[int(num)-1]
 					if trig == int(ch):
@@ -192,9 +192,8 @@ def main():
 				if set_main['cutoff'] > 0:
 					data = gp.BesselFilter(data,rate,fs = set['main']['cutoff'])
 				plt.plot(time,data)
-				#plt.xlim(0.009,0.0130)
+				gp.graugh_condition(set)
 				plt.title(f'CH{ch} {num}')
-				#plt.yscale('log')
 				plt.xlabel("time(s)")
 				plt.ylabel("volt(V)")
 				plt.savefig(f'{output_f}/img/{num}.png')
@@ -244,14 +243,15 @@ def main():
 			for num in picked:
 				path = f'CH{ch}_pulse/rawdata/CH{ch}_{num}.dat'
 				data = gp.loadbi(path)
+				base,data = gp.baseline(data,presamples,set_main['base_x'],set_main['base_w'])
 				if set_main['cutoff'] > 0:
 					data = gp.BesselFilter(data,rate,set_main['cutoff'])
-				base = df.at[path,"base"]
-				data -=base
+				
 				array.append(data)
 			av = np.mean(array,axis=0)
 
 			plt.plot(time,av)
+			gp.graugh_condition(set)
 			plt.xlabel("time(s)")
 			plt.ylabel("volt(V)")
 			plt.title("average pulse")

@@ -1,9 +1,4 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-# 11-6D1
-#Tsuruta Tetsuya 2019.06.14
-#川上さんのを参考に作りました。
-#python3に書き換え済
+
 
 #----------- モジュールのインポート --------------
 import math
@@ -19,12 +14,14 @@ import libs.getpara as gp
 import pandas as pd
 from scipy.optimize import curve_fit
 import sys
-
+import json
+12.16,12.28
 #-------------- ガウスフィッティング ----------------
 BINS = 2048
+# K_x  = -77keV
 
 def gausse(x,A,mu,sigma):
-    return A*np.exp(-(x-mu)**2/(2.0*sigma**2))
+	return A*np.exp(-(x-mu)**2/(2.0*sigma**2))
 
 def main():
 
@@ -41,15 +38,15 @@ def main():
 	plt.xlabel('Channel',fontsize = 14)
 	plt.ylabel('Count',fontsize = 14)
 	plt.tick_params(axis='both', which='both', direction='in',\
-                    bottom=True, top=True, left=True, right=True)
+					bottom=True, top=True, left=True, right=True)
 	plt.grid(True, which='major', color='black', linestyle='-', linewidth=0.2)
-	#plt.show()
+	plt.show()
 
 
-	energy = 1332#float(input('input Energy(keV): '))
-	min = 14.40#float(input('min: '))
-	max = 14.46#float(input('max: '))
-	bins = 20#int(input('bins: '))
+	energy = float(input('input Energy(keV): '))
+	min = float(input('min: '))
+	max = float(input('max: '))
+	bins = int(input('bins: '))
 	
 	pulseheight = df_sel[(df_sel['height_opt_temp'] > min)&(df_sel['height_opt_temp'] < max)]
 	hist, bin_edges = np.histogram(pulseheight['height_opt_temp'], bins=bins)
@@ -61,19 +58,26 @@ def main():
 	y_fit = gausse(x_fit,*params)
 	fwhw = gp.FWHW(sigma)
 	dE = energy*fwhw/mu
-
-	if os.path.exists(f'{output}/{set["select"]["output"]}/E_resolution.csv'):
-		df = pd.read_csv(f'{output}/{set["select"]["output"]}/E_resolution.csv',index_col=0)
-	else:
-		df = pd.DataFrame([],\
-        columns=["energy","A","mu","sigma","fwhw","dE"])
-	print(df)
-	df2 = pd.DataFrame([energy,a,mu,sigma,fwhw,dE],\
-        columns=["energy","A","mu","sigma","fwhw","dE"])
-	df = pd.concat([df,df2],axis=0)
-	print(df)
-	df.to_csv(f'{output}/{set["select"]["output"]}/E_resolution.csv',index=False)
 	
+	fit_para = {energy:
+			{
+			"A":a,
+			"mu":mu,
+			"sigma":sigma,
+			"fwhw":fwhw,
+			"dE":dE
+			}
+		}
+	
+	if os.path.exists(f'{output}/{set["select"]["output"]}/gfit.json'):
+		with open(f'{output}/{set["select"]["output"]}/gfit.json') as f:
+			jsn = json.load(f)
+		jsn.update(fit_para)
+		jsn = json.dumps(jsn,indent=4)
+	else:
+		jsn = json.dumps(fit_para,indent=4)
+	with open(f'{output}/{set["select"]["output"]}/gfit.json', 'w') as file:
+		file.write(jsn)
 
 	print(f'\nA: {a}\nmu: {mu}\nsigma: {sigma}')
 	print(f'\nFWHW: {fwhw}\nEnergy resoltion: {dE} keV')
@@ -84,7 +88,7 @@ def main():
 	plt.xlabel('Channel',fontsize = 14)
 	plt.ylabel('Count',fontsize = 14)
 	plt.tick_params(axis='both', which='both', direction='in',\
-                    bottom=True, top=True, left=True, right=True)
+					bottom=True, top=True, left=True, right=True)
 	plt.grid(True, which='major', color='black', linestyle='-', linewidth=0.2)
 	plt.savefig(f'{output}/{set["select"]["output"]}/E_{int(energy)}keV.png')
 	plt.show()

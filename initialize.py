@@ -50,31 +50,44 @@ main2_para = {"main2": {
     }
 }
 
+
+
 # Json形式へ変更
 
 def main():
     path = filedialog.askdirectory()
     output = input("output name:")
     post_ch = glob.glob(f'{path}/CH*')
-
-    setting = np.loadtxt(f"{path}/Setting.txt",skiprows = 10)
-    setting_json = {
-        "Config":{
-            "path" : path,
-            "channel":0,
-            "rate" : int(setting[2]),
-            "samples" : int(setting[4]),
-            "presamples" : int(setting[5]),
-            "threshold" : setting[6],
-            "output" : output
+    try:
+        setting = np.loadtxt(f"{path}/Setting.txt",skiprows = 10)
+        setting_json = {
+            "Config":{
+                "path" : path,
+                "channel":0,
+                "rate" : int(setting[2]),
+                "samples" : int(setting[4]),
+                "presamples" : int(setting[5]),
+                "threshold" : setting[6],
+                "output" : output
+            }
         }
+    except:
+        print("Not exist Setting.txt !")
         
-    }
 
     setting_json.update(main_para)
     if len(post_ch) > 2:
         setting_json.update(main2_para)
     
+    xlim = setting_json["Config"]["samples"]/setting_json["Config"]["rate"]
+    graugh_para = {"graugh": {
+        "xlim->":0.0,
+        "xlim-<":xlim,
+        "log":False
+        }
+    }
+    setting_json.update(graugh_para)
+
     jsn = json.dumps(setting_json,indent=4)
 
     # current directry

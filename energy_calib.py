@@ -14,6 +14,7 @@ import matplotlib.pyplot as plt
 import libs.getpara as gp
 import pandas as pd
 from scipy.optimize import curve_fit
+import json
 import sys
 
 p0 = [0,0,0]
@@ -34,11 +35,14 @@ def main():
 	output_f = f'{output}/{set["select"]["output"]}'
 	os.chdir(path)
 	df = pd.read_csv((f'{output}/output.csv'),index_col=0)
-	df_calib = pd.read_csv(f'{output_f}/E_resolution.csv',index_col=0).sort_values('energy')
+	with open(f'{output}/{set["select"]["output"]}/gfit.json') as f:
+			fit_para = json.load(f)
 	
-	print(df_calib)
-	height = df_calib['mu']
-	energy = df_calib.iloc[:,0]
+	height = [0.0]
+	energy = [0.0]
+	for i in fit_para:
+		height.append(float(i))
+		energy.append(fit_para[i]["mu"])
 	
 	
 	popt,pcov = curve_fit(func,height,energy,p0)
@@ -48,9 +52,9 @@ def main():
 	df['height_eng'] = popt[0] * pulse_height**2 + popt[1] * pulse_height + popt[2]
 	df.to_csv(f"{output}/output.csv")
 	df.to_csv(f"{output}/{set['select']['output']}/output.csv")
-
+	
 	plt.plot(height,energy,'o',markersize=6)
-	plt.plot(x_fit,y_fit,color='red',linewidth=1,linestyle='-',label=f'{popt[0]}$x^{2}$ + {popt[1]}x + {popt[3]}')
+	plt.plot(x_fit,y_fit,color='red',linewidth=1,linestyle='-',label=f'{popt[0]}$x^{2}$ + {popt[1]}x + {popt[2]}')
 	plt.xticks(fontsize=14)
 	plt.yticks(fontsize=14)
 	plt.ylabel('Pulseheight[V]',fontsize=14, fontname='serif')

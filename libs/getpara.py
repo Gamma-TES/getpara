@@ -446,6 +446,11 @@ def graugh_fft(path,data,time):
     #a = plt.ginput(n=2,mouse_add=1,mouse_pop=3,mouse_stop=2)
     plt.show()
     
+def graugh_condition(set):
+    plt.xlim(set["graugh"]["xlim->"],set["graugh"]["xlim-<"])
+    if set["graugh"]["log"]:
+        plt.yscale("log")
+    
 
 #outputフォルダの作成
 def output(path,df):

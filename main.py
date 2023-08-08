@@ -270,7 +270,7 @@ if __name__ == '__main__':
                 plt.scatter(time[presamples],data[presamples], color='magenta', label ='risepoint',zorder = 2)
                 plt.legend()
 
-            
+            gp.graugh_condition(set)
             plt.xlabel("time(s)")
             plt.ylabel("volt(V)")
             plt.grid()
@@ -345,11 +345,14 @@ if __name__ == '__main__':
         
             plt.xlabel("time(s)")
             plt.ylabel("volt(V)")
+            gp.graugh_condition(set)
             plt.title(os.path.basename(path).replace('.dat',''))
             plt.grid()
             plt.legend()
             plt.show()
             plt.cla()
+
+
             gp.graugh('diff pulse',dif,time[:samples-set['main']['mv_w']+1])
             plt.show()
             
