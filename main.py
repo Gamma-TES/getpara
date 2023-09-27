@@ -81,7 +81,8 @@ if __name__ == '__main__':
         RED = '\033[33m'
         END = '\033[0m'
         print(RED+'PoST mode'+END)
-        trig_ch = np.loadtxt('channel.txt')
+        trig_ch = np.loadtxt('channel.txt')[:,1]
+        print(trig_ch)
         post_ch = glob.glob('CH*_pulse')
         for i in post_ch:
             ch = int(re.sub(r"\D", "", i))
@@ -256,9 +257,9 @@ if __name__ == '__main__':
 
                 
                 if set_main['cutoff'] > 0:
-                    plt.plot(time,data,'o',markersize=1,label=f"rawdata_ch{ch} filt")
+                    plt.plot(time,data,markersize=1,label=f"rawdata_ch{ch} filt")
                 else:
-                    plt.plot(time,data,'o',markersize=1,label=f"rawdata_ch{ch}")
+                    plt.plot(time,data,markersize=1,label=f"rawdata_ch{ch}")
                 if fitting_mode:
                     plt.plot(x_fit/rate,fitting,'-.',label = 'fitting')
                 #plt.plot(time,mv_padding,'o',markersize=1,label=f"mv_ch{ch} mv")

@@ -58,8 +58,9 @@ def main():
     path = filedialog.askdirectory()
     output = input("output name:")
     post_ch = glob.glob(f'{path}/CH*')
+    print(f"{path}/Setting.txt")
     try:
-        setting = np.loadtxt(f"{path}/Setting.txt",skiprows = 10)
+        setting = np.loadtxt(f"{path}/setting.txt",skiprows = 8)
         setting_json = {
             "Config":{
                 "path" : path,
@@ -73,6 +74,17 @@ def main():
         }
     except:
         print("Not exist Setting.txt !")
+        setting_json = {
+            "Config":{
+                "path" : path,
+                "channel":0,
+                "rate" : int(1000000),
+                "samples" : int(100000),
+                "presamples" : int(10000),
+                "threshold" : 0.3,
+                "output" : output
+            }
+        }
         
 
     setting_json.update(main_para)

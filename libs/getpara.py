@@ -481,6 +481,11 @@ def double_event(data,threshold):
     plt.plot(dif)
     plt.show()
 
+# extruct numbers from strings
+def num(strings):
+    return re.sub(r"\D", "", strings)
+
+
 
 def main():
     data = loadbi(test_data)
