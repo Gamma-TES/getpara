@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import os
-import libs.getpara as gp
+import getpara as gp
 import sys
 import shutil
 import pprint

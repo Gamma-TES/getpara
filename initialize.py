@@ -27,7 +27,7 @@ main_para = {"main": {
             1e-05
         ],
         "mv_w": 100,
-        "cutoff": 10000.0
+        "cutoff": 0.0
     }
 }
 
@@ -46,7 +46,7 @@ main2_para = {"main2": {
             1e-05
         ],
         "mv_w": 100,
-        "cutoff": 10000
+        "cutoff": 0.0
     }
 }
 
@@ -69,7 +69,8 @@ def main():
                 "samples" : int(setting[4]),
                 "presamples" : int(setting[5]),
                 "threshold" : setting[6],
-                "output" : output
+                "output" : output,
+                "type": 'binary'
             }
         }
     except:
@@ -78,11 +79,13 @@ def main():
             "Config":{
                 "path" : path,
                 "channel":0,
-                "rate" : int(1000000),
-                "samples" : int(100000),
-                "presamples" : int(10000),
+                "rate" : int(250000),
+                "samples" : int(50000),
+                "presamples" : int(5000),
                 "threshold" : 0.3,
-                "output" : output
+                "output" : output,
+                "type": 'text'
+
             }
         }
         
