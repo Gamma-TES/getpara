@@ -18,13 +18,21 @@ import warnings
 test_data='E:/matsumi/data/20230512/room2-2_140mK_870uA_gain10_trig0.4_500kHz/CH0_pulse/rawdata/CH0_4833.dat'
 
 e = 2.718
+
+decay_high = 0.90
+decay_low = 0.60
 #---解析プログラム作成------------------------------------------------------------
 
+
+# --- FILE LIBRARY ----------------------------------------------
 # ファイル読み込み(バイナリ)
 def loadbi(path):
-    with open (path,'rb') as fb:
-        fb.seek(4)
-        data = np.frombuffer(fb.read(),dtype='float64')
+    try:
+        with open (path,'rb') as fb:
+            fb.seek(4)
+            data = np.frombuffer(fb.read(),dtype='float64')
+    except:
+        data = loadtxt(path)
         return data
 
 # ファイル読み込み（テキスト）
@@ -87,6 +95,9 @@ def loadIndex(path):
             index.append(row)
     return index
 
+# ---------------------------------------------------------------------
+
+
 def select_condition(df,set):
     for i in set['select']:
         try:
@@ -112,6 +123,8 @@ def select_condition(df,set):
 def data_time(rate,samples):
     return  np.arange(0,1/rate*samples,1/rate)
 
+
+# ---- MAIN LIBRARY ------------------------------------------
 
 #ベースラインを作成
 def baseline(data,presamples,x,w):
@@ -164,11 +177,11 @@ def decaytime(data,peak,peak_index,rate):
     decay_90 = 0
     decay_10 = 0
     for i in range(peak_index,len(data)):
-        if data[i] <= peak*0.9:
+        if data[i] <= peak*decay_high:
             decay_90 = i
             break
     for j in range(decay_90,len(data)):
-        if data[j] <= peak*0.1:
+        if data[j] <= peak*decay_low:
             decay_10 = j
             break
     
@@ -289,7 +302,8 @@ def siliconEvent(data,peak_index,rate):
         
     return cnt
 
-    
+# ----------------------------------------------------------
+
 def search_peak(hist):
     
     mv = moving_average(hist,5)
@@ -393,6 +407,8 @@ def average_pulse(index,presamples):
     return av
 
 
+
+# -------- GRAUGH LIBRARY -------------------------------------
 #パルスグラフ表示
 def graugh(path,data,time):
     x = time
@@ -450,7 +466,8 @@ def graugh_condition(set):
     plt.xlim(set["graugh"]["xlim->"],set["graugh"]["xlim-<"])
     if set["graugh"]["log"]:
         plt.yscale("log")
-    
+
+#------------------------------------------------------------------
 
 #outputフォルダの作成
 def output(path,df):
