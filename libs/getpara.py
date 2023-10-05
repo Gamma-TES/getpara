@@ -41,6 +41,11 @@ def loadtxt(path):
         data = np.loadtxt(f,comments='#',skiprows=6)
     return data
 
+def loaddate(path):
+    with open(path,'r') as f:
+        data = f.readline()
+    return data
+
 # Setting.txtを読み込み
 def setting(path):
     with open(path) as f:
@@ -500,7 +505,7 @@ def double_event(data,threshold):
 
 # extruct numbers from strings
 def num(strings):
-    return re.sub(r"\D", "", strings)
+    return re.findall(r"\d+", strings)
 
 
 

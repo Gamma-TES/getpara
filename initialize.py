@@ -82,7 +82,7 @@ def main():
                 "rate" : int(250000),
                 "samples" : int(50000),
                 "presamples" : int(5000),
-                "threshold" : 0.3,
+                "threshold" : 0.03,
                 "output" : output,
                 "type": 'text'
 
@@ -98,7 +98,8 @@ def main():
     graugh_para = {"graugh": {
         "xlim->":0.0,
         "xlim-<":xlim,
-        "log":False
+        "log":False,
+        "diff":False
         }
     }
     setting_json.update(graugh_para)

@@ -369,11 +369,11 @@ if __name__ == '__main__':
                 plt.show()
                 plt.cla()
 
-
-                gp.graugh('diff pulse',dif,time[:samples-set['main']['mv_w']+1])
-                plt.show()
-            except:
-                print('error')
+                if set['graugh']['diff']:
+                    gp.graugh('diff pulse',dif,time[:samples-set['main']['mv_w']+1])
+                    plt.show()
+            except Exception as e:
+                print(e)
 
         print("end")
         print('---------------------------\n')
