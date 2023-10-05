@@ -89,7 +89,9 @@ def main():
 		ax.remove('-p')
 		mode = 'post'
 		post_ch = [re.sub(r"\D", "", i) for i in glob.glob('CH*_pulse')]
-		if "channel_2" in set["select"]:
+		print(post_ch)
+
+		if "channel_2" not in set["select"]:
 			ch2= input("the other channel: ")
 			if ch2 in post_ch:
 				set['select']['channel_2'] = ch2
@@ -97,15 +99,18 @@ def main():
 				print("non exist channel")
 				sys.exit()
 		
-			
+		ch2 = set['select']['channel_2']
 		output2 = f'CH{ch2}_pulse/output/{set["Config"]["output"]}'
 		df2 = pd.read_csv((f'{output2}/output.csv'),index_col=0)
-		trig_ch = np.loadtxt('channel.txt')
+
+		try:
+			trig_ch = np.loadtxt('channel.txt')
+		except:
+			trig_ch = np.zeros(len(df))
 		
 		for i in post_ch:
 			print(f"CH{ch} triggered: {np.count_nonzero(trig_ch==ch)} count")
-	
-				
+
 	else:
 		mode = "single"
 		set_main = set["main"]
@@ -182,15 +187,17 @@ def main():
 			for num in tqdm.tqdm(picked):
 				path = f'CH{ch}_pulse/rawdata/CH{ch}_{num}.dat'
 				data = gp.loadbi(path)
-				base,data = gp.baseline(data,presamples,set_main['base_x'],set_main['base_w'])
+
 				if mode == 'post':
 					trig = trig_ch[int(num)-1]
 					if trig == int(ch):
 						set_main = set["main"]
 					else:
 						set_main = set["main2"]
+
+				base,data = gp.baseline(data,presamples,set_main['base_x'],set_main['base_w'])
 				if set_main['cutoff'] > 0:
-					data = gp.BesselFilter(data,rate,fs = set['main']['cutoff'])
+					data = gp.BesselFilter(data,rate,fs = set_main['cutoff'])
 				plt.plot(time,data)
 				gp.graugh_condition(set)
 				plt.title(f'CH{ch} {num}')
@@ -268,13 +275,16 @@ def main():
 			plt.show()
 
 			np.savetxt(f'{output_f}/average_pulse.txt',av)
+
+			jsn = json.dumps(set,indent=4)
+			with open(f'{output_f}/setting.json', 'w') as file:
+				file.write(jsn)
 	
 	
 	jsn = json.dumps(set,indent=4)
 	with open(f"{os.path.dirname(__file__)}/setting.json", 'w') as file:
 		file.write(jsn)
-	with open(f'{output_f}/setting.json', 'w') as file:
-		file.write(jsn)
+
 	df.to_csv(f'{output}/output.csv')
 
 

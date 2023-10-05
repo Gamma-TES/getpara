@@ -98,7 +98,7 @@ def loadIndex(path):
     with open (path,'r') as f:
         for row in f.read().splitlines():
             index.append(row)
-    return index
+    return [int(i) for i in index]
 
 # ---------------------------------------------------------------------
 
@@ -402,10 +402,15 @@ def PlotSelected(x,y,inside,x_picked,y_picked):
 #--------------------------------------------------------------
 
 #平均パルスを作成
-def average_pulse(index,presamples):
+def average_pulse(index,set):
     array = []
+    presamples = set['Config']["presamples"]
+    
     for i in index:
-        data = loadbi(i)
+        try:
+            data = loadbi(i)
+        except:
+            data = loadtxt(i)
         base,data = baseline(data,presamples,1000,500)
         array.append(data)
     av = np.mean(array,axis=0)
@@ -507,6 +512,19 @@ def double_event(data,threshold):
 def num(strings):
     return re.findall(r"\d+", strings)
 
+ax_unit = {
+	"base":'base[V]',
+	"height":'pulse height[V]',
+	"peak_index":'peak index',
+	"height_opt":'pulse height opt',
+	"height_opt_temp":'pulse height opt temp',
+	'rise':'rise[s]',
+	'decay':'decay[s]',
+	'rise_fit':'rise_fit[s]',
+	'tau_rise':'tau_rise[s]',
+	'tau_decay':'tau_decay[s]',
+	'rSquared':'rSquared'
+}
 
 
 def main():
