@@ -57,10 +57,10 @@ main2_para = {"main2": {
 def main():
     path = filedialog.askdirectory()
     output = input("output name:")
-    post_ch = glob.glob(f'{path}/CH*')
-    print(f"{path}/Setting.txt")
+    post_ch = glob.glob(f'{path}/CH*_*')
+    print(f"{path}/setting.txt")
     try:
-        setting = np.loadtxt(f"{path}/setting.txt",skiprows = 8)
+        setting = np.loadtxt(f"{path}/setting.txt",skiprows = 10)
         setting_json = {
             "Config":{
                 "path" : path,
@@ -74,7 +74,7 @@ def main():
             }
         }
     except:
-        print("Not exist Setting.txt !")
+        print("Not exist setting.txt !")
         setting_json = {
             "Config":{
                 "path" : path,

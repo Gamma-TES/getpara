@@ -236,9 +236,9 @@ def main():
 				fle = []
 
 			for f in fle:
-				num =  int(re.findall(r'\d+', os.path.basename(f))[1])              
+				num =  int(re.findall(r'\d+', os.path.basename(f))[0])              
 				picked.remove(num)
-				os.remove(f'{output_f}/img/CH{ch}_{num}.png')
+				os.remove(f'{output_f}/img/{num}.png')
 				np.savetxt(f'{output_f}/selected_index.txt',picked,fmt="%s")
 				df.at[num,"quality"] = 0
 

@@ -26,14 +26,14 @@ decay_low = 0.60
 
 # --- FILE LIBRARY ----------------------------------------------
 # ファイル読み込み(バイナリ)
-def loadbi(path):
-    try:
+def loadbi(path,type):
+    if type == "binary":
         with open (path,'rb') as fb:
             fb.seek(4)
             data = np.frombuffer(fb.read(),dtype='float64')
-    except:
+    elif type == "text":
         data = loadtxt(path)
-        return data
+    return data
 
 # ファイル読み込み（テキスト）
 def loadtxt(path):

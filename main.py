@@ -82,7 +82,7 @@ if __name__ == '__main__':
         END = '\033[0m'
         print(RED+'PoST mode'+END)
         try:
-            trig_ch = np.loadtxt('channel.txt')[:,1]
+            trig_ch = np.loadtxt('channel.txt')[:]
         except:
             trig_ch = np.zeros(len(glob.glob(f'CH{ch}_pulse/rawdata/CH{ch}_*.dat')))
 
@@ -101,12 +101,13 @@ if __name__ == '__main__':
         print("test mode")
         path_raw = natsorted(glob.glob(f'CH{ch}_pulse/rawdata/CH{ch}_*.dat'))
         arr = np.arange(len(path_raw))
-        seed = int(input("seed: "))
-        np.random.seed(seed)
-        set['main']['seed'] = seed
+        if not 'test_seed' in set["Config"]:
+            set['Config']['test_seed'] = int(input("seed: "))
+            set['Config']['test_lenght'] = int(input('length: ')) # length of array
+        
+        np.random.seed(set['Config']['test_seed'])
         np.random.shuffle(arr) # shuffle array
-        length = int(input('length: ')) # length of array
-        arr_select = arr[:length]
+        arr_select = arr[:set['Config']['test_lenght']]
         extruct = []
         for i in arr_select:
             path = f'CH{ch}_pulse/rawdata/CH{ch}_{i}.dat'
@@ -135,7 +136,7 @@ if __name__ == '__main__':
         for path in tqdm.tqdm(path_data):
             try:
                 num =  re.findall(r'\d+', os.path.basename(path))[1]
-                data = gp.loadbi(path)
+                data = gp.loadbi(path,set_config["type"])
 
                 if post_mode:
                     trig = trig_ch[int(num)-1]
@@ -198,8 +199,7 @@ if __name__ == '__main__':
 
         # output
         df.to_csv(os.path.join(output,"output.csv"))
-        
-        print('end\n-------------------------------------')
+    
     # -------------------------------------------------------------------------------------------------
         
 
@@ -218,7 +218,7 @@ if __name__ == '__main__':
                 for i in post_ch:
                     ch = int(re.sub(r"\D", "", i))
                     path = f'{i}/rawdata/CH{ch}_{num}.dat'
-                    data = gp.loadbi(path)
+                    data = gp.loadbi(path,set_config["type"])
 
                     if trig == ch:
                         set_main = set["main"]
@@ -288,8 +288,8 @@ if __name__ == '__main__':
                 plt.title(f'rawdata {num}.')
                 plt.show()
                 plt.cla()
-            except:
-                print('error')
+            except Exception as e:
+                print()
 
             
             
@@ -301,8 +301,7 @@ if __name__ == '__main__':
             # Processing
             path = f'CH{ch}_pulse/rawdata/CH{ch}_{num}.dat'
             try:
-                data = gp.loadbi(path)
-                print(data)
+                data = gp.loadbi(path,set_config["type"])
                 plt.show()
                 plt.cla()
                 base,data = gp.baseline(data,presamples,set_main['base_x'],set_main['base_w'])
@@ -374,7 +373,10 @@ if __name__ == '__main__':
                     plt.show()
             except Exception as e:
                 print(e)
-
-        print("end")
-        print('---------------------------\n')
+    
+    jsn = json.dumps(set,indent=4)
+    with open(f"{os.path.dirname(__file__)}/setting.json", 'w') as file:
+        file.write(jsn)
+    print("end")
+    print('---------------------------\n')
 

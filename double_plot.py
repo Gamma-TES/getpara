@@ -10,11 +10,14 @@ def main():
 	
 	path1 = filedialog.askopenfilename()
 	path2 = filedialog.askopenfilename()
-	data1 = gp.loadtxt(path1)
-	data2 = gp.loadtxt(path2)
-	time = np.linspace(0,0.2,len(data1))
-	plt.plot(time,data1)
-	plt.plot(time,data2)
+	data1 = np.loadtxt(path1)
+	data2 = np.loadtxt(path2)
+
+	time = gp.data_time(config["rate"],config["samples"])
+	plt.plot(time*1000,data1)
+	plt.plot(time*1000,data2)
+	plt.xlabel("time [ms]")
+	plt.ylabel("volt [V]")
 	plt.show()
 
 main()
