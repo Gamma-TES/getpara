@@ -2,6 +2,8 @@ import matplotlib.pyplot as plt
 from tkinter import filedialog
 import getpara as gp
 import numpy as np
+
+
 def main():
 	setting = gp.loadJson()
 	config = setting["Config"]

@@ -95,16 +95,25 @@ def loadPHITS(path,start,end,column):
 
 def loadIndex(path):
     index = []
-    with open (path,'r') as f:
-        for row in f.read().splitlines():
-            index.append(row)
-    return [int(i) for i in index]
+    try:
+        with open (path,'r') as f:
+            for row in f.read().splitlines():
+                index.append(row)
+        return [int(i) for i in index]
+    except:
+        with open (path,'r') as f:
+            for row in f.read().splitlines():
+                index.append(row)
+        return [int(float(i)) for i in index]
 
 # ---------------------------------------------------------------------
 
 
 def select_condition(df,set):
     for i in set['select']:
+        if i == "index":
+            selectdata = loadIndex(set["select"][i])
+            df = df[df.index.isin(selectdata)]
         try:
             param,sym = i.split('-')
             if i == "index->":
@@ -124,6 +133,10 @@ def select_condition(df,set):
             continue
     return df
  
+def overlap(df_0,df_1):
+    df_comp_0 = df_0[df_0.index.isin(df_1.index)]
+    df_comp_1 = df_1[df_1.index.isin(df_0.index)]
+    return df_comp_0,df_comp_1
 
 def data_time(rate,samples):
     return  np.arange(0,1/rate*samples,1/rate)

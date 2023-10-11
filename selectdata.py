@@ -29,15 +29,6 @@ import platform
 
 
 
-#平均パルスを作成
-def average_pulse(index,presamples):
-	array = []
-	for i in index:
-		data = gp.loadbi(i)
-		base,data = gp.baseline(data,presamples,1000,500)
-		array.append(data)
-	av = np.mean(array,axis=0)
-	return av
 
 ax_unit = {
 	"base":'base[V]',
@@ -77,7 +68,7 @@ def main():
 			file.write(jsn)
 
 	os.chdir(set["Config"]["path"])
-	
+	set_config = set["Config"]
 
 	output = f'CH{set["Config"]["channel"]}_pulse/output/{set["Config"]["output"]}'
 	print(output)
@@ -177,7 +168,7 @@ def main():
 
 		if len(picked) == 1:
 			path = f'CH{ch}_pulse/rawdata/CH{ch}_{picked[0]}.dat'
-			picked_data = gp.loadbi(path)
+			picked_data = gp.loadbi(path,set_config["type"])
 			print(df_clear.loc[path]) 
 			gp.graugh(path,picked_data,time)
 			gp.graugh_condition(set)
@@ -186,7 +177,7 @@ def main():
 			# average pulse
 			for num in tqdm.tqdm(picked):
 				path = f'CH{ch}_pulse/rawdata/CH{ch}_{num}.dat'
-				data = gp.loadbi(path)
+				data = gp.loadbi(path,set_config["type"])
 
 				if mode == 'post':
 					trig = trig_ch[int(num)-1]
@@ -249,7 +240,7 @@ def main():
 			array = []
 			for num in picked:
 				path = f'CH{ch}_pulse/rawdata/CH{ch}_{num}.dat'
-				data = gp.loadbi(path)
+				data = gp.loadbi(path,set_config["type"])
 				base,data = gp.baseline(data,presamples,set_main['base_x'],set_main['base_w'])
 				if set_main['cutoff'] > 0:
 					data = gp.BesselFilter(data,rate,set_main['cutoff'])
