@@ -93,16 +93,27 @@ def main():
     setting_json.update(main_para)
     if len(post_ch) > 2:
         setting_json.update(main2_para)
-    
+
+
+    #----- Select Data Parameter ----------------------------------------------
+    para = {'select':{
+	'samples-=':setting_json['Config']['samples'],
+	'height->':setting_json['Config']['threshold'],
+	'rSquared->':0,
+	'quality!=':0
+	}}
+    #--------------------------------------------------------------------------
+
+    #----- Graugh Parameter ---------------------------------------------------
     xlim = setting_json["Config"]["samples"]/setting_json["Config"]["rate"]
     graugh_para = {"graugh": {
         "xlim->":0.0,
         "xlim-<":xlim,
         "log":False,
         "diff":False
-        }
-    }
-    setting_json.update(graugh_para)
+        }}
+    #--------------------------------------------------------------------------
+    setting_json.update(para,graugh_para)
 
     jsn = json.dumps(setting_json,indent=4)
 

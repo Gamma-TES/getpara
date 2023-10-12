@@ -35,17 +35,14 @@ import tqdm
 
 
 # run
-if __name__ == '__main__':
+def main():
 
     # Mode option
     ax = sys.argv
     ax.append(0)
     
-    # add main option at setting.json
-    with open("setting.json") as f:
-        set = json.load(f)
+    setting = gp.loadJson()
 
-    
     # if post mode, add main2 option
     if '-p' in ax:
         post_mode = 1
@@ -60,54 +57,61 @@ if __name__ == '__main__':
 
 
     # get setting from setting.json
-    set_config = set["Config"]
-    set_main = set["main"]
-    path = set_config["path"]
+    config = setting["Config"]
+    analysis = setting["main"]
+    path = config["path"]
     ch,rate,samples,presamples,threshold = \
-        set_config["channel"],set_config['rate'],set_config['samples'],set_config["presamples"],set_config["threshold"]
+        config["channel"],config['rate'],config['samples'],config["presamples"],config["threshold"]
     time = np.arange(0,1/rate*samples,1/rate)
     
 
     # analysis output path
-    output = f'CH{ch}_pulse/output/{set_config["output"]}'
+    output = f'CH{ch}_pulse/output/{config["output"]}'
 
     # change directry
     os.chdir(path)
 
+    #all data 
+    path_data = natsorted(glob.glob(f'CH{ch}_pulse/rawdata/CH{ch}_*.dat'))
 
-    # -- PoST Mode setting----------------
+    # -- PoST Mode ---------------------------------
+
     # post mode use trigger channel data
-    if '-p' in ax:
+    if post_mode:
         RED = '\033[33m'
         END = '\033[0m'
         print(RED+'PoST mode'+END)
         try:
             trig_ch = np.loadtxt('channel.txt')[:]
         except:
-            trig_ch = np.zeros(len(glob.glob(f'CH{ch}_pulse/rawdata/CH{ch}_*.dat')))
+            trig_ch = np.zeros(len(path_data))
 
-        print(trig_ch)
         post_ch = glob.glob('CH*_pulse')
         for i in post_ch:
             ch = int(re.sub(r"\D", "", i))
             print(f"CH{ch} triggered: {np.count_nonzero(trig_ch==ch)} count")
         
-        
 
-    # -- test mode ------------------------
+    # -- test mode ---------------------------------------------------------
+    # only index datas
+    if "index" in config:
+        idx = gp.loadIndex(config["index"])
+        path_data = [f'CH{ch}_pulse/rawdata/CH{ch}_{i}.dat' for i in idx]
+    num_data = [re.findall(r'\d+', os.path.basename(i))[1] for i in path_data]
+    print(f"{len(path_data)} pulses")
+
     # some lenght random data analysis mode
     if "-t" in ax:
 
         print("test mode")
-        path_raw = natsorted(glob.glob(f'CH{ch}_pulse/rawdata/CH{ch}_*.dat'))
-        arr = np.arange(len(path_raw))
-        if not 'test_seed' in set["Config"]:
-            set['Config']['test_seed'] = int(input("seed: "))
-            set['Config']['test_lenght'] = int(input('length: ')) # length of array
+        arr = np.arange(len(path_data))
+        if not 'test_seed' in config:
+            config['test_seed'] = int(input("seed: "))
+            config['test_lenght'] = int(input('length: ')) # length of array
         
-        np.random.seed(set['Config']['test_seed'])
+        np.random.seed(config['test_seed'])
         np.random.shuffle(arr) # shuffle array
-        arr_select = arr[:set['Config']['test_lenght']]
+        arr_select = arr[:config['test_lenght']]
         extruct = []
         for i in arr_select:
             path = f'CH{ch}_pulse/rawdata/CH{ch}_{i}.dat'
@@ -115,18 +119,10 @@ if __name__ == '__main__':
         path_data = natsorted(extruct)
         num_data = [re.findall(r'\d+', os.path.basename(i))[1] for i in path_data]
         ax.append('-a')
-    # --------------------------------------
+    # ----------------------------------------------------------------------
 
-    # -- product mode ----------------------
     else:
-        path_data = natsorted(glob.glob(f'CH{ch}_pulse/rawdata/CH{ch}_*.dat'))
-        num_data = [re.findall(r'\d+', os.path.basename(i))[1] for i in path_data]
-        print(f"{len(path_data)} pulses")
-
-
-    jsn = json.dumps(set,indent=4)
-    with open(f'{output}/setting.json', 'w') as file:
-        file.write(jsn)
+        print("\n")
 
     # --- all Samples -----------------------------------------------------
     if '-a' in ax:
@@ -136,41 +132,42 @@ if __name__ == '__main__':
         for path in tqdm.tqdm(path_data):
             try:
                 num =  re.findall(r'\d+', os.path.basename(path))[1]
-                data = gp.loadbi(path,set_config["type"])
+                data = gp.loadbi(path,config["type"])
 
+                # choose triggerd channel
                 if post_mode:
                     trig = trig_ch[int(num)-1]
                     if trig == int(ch):
-                        set_main = set["main"]
+                        analysis = setting["main"]
                     else:
-                        set_main = set["main2"]
+                        analysis = setting["main2"]
                 else:
-                    set_main = set["main"]
+                    analysis = setting["main"]
                     trig = int(ch)
                 
-                base,data = gp.baseline(data,presamples,set_main['base_x'],set_main['base_w'])
+                base,data = gp.baseline(data,presamples,analysis['base_x'],analysis['base_w'])
 
                 # fitting
                 if fitting_mode:
 
                     x_fit = np.arange(presamples-5,samples,0.1)
-                    popt,rSquared = gp.fitExp(gp.fit_func(set_main['fit_func']),data,presamples+set_main['fit_x'],set_main['fit_w'],p0 = set_main['fit_p0'])
-                    if set_main['fit_func'] == "monoExp":
+                    popt,rSquared = gp.fitExp(gp.fit_func(analysis['fit_func']),data,presamples+analysis['fit_x'],analysis['fit_w'],p0 = analysis['fit_p0'])
+                    if analysis['fit_func'] == "monoExp":
                         tau_rise = 0
                         tau_decay = 1/popt[1]/rate
-                    if set_main['fit_func'] == "doubleExp":
+                    if analysis['fit_func'] == "doubleExp":
                         tau_rise = popt[1]/rate
                         tau_decay = popt[3]/rate
-                    fit_func = gp.fit_func(set_main["fit_func"])
+                    fit_func = gp.fit_func(analysis["fit_func"])
                     #rise_fit = gp.risetime(fitting,np.max(fitting),np.argmax(fitting),rate)
 
 
                 # low pass filter
-                if set_main['cutoff'] > 0:
-                    data = gp.BesselFilter(data,rate,set_main['cutoff'])
+                if analysis['cutoff'] > 0:
+                    data = gp.BesselFilter(data,rate,analysis['cutoff'])
                 
                 # analysis
-                peak,peak_av,peak_index = gp.peak(data,presamples,set_main['peak_max'],set_main['peak_x'],set_main['peak_w'])
+                peak,peak_av,peak_index = gp.peak(data,presamples,analysis['peak_max'],analysis['peak_x'],analysis['peak_w'])
                 rise,rise_10,rise_90 = gp.risetime(data,peak_av,peak_index,rate)
                 decay,decay_10,decay_90 = gp.decaytime(data,peak_av,peak_index,rate)
                 
@@ -218,25 +215,24 @@ if __name__ == '__main__':
                 for i in post_ch:
                     ch = int(re.sub(r"\D", "", i))
                     path = f'{i}/rawdata/CH{ch}_{num}.dat'
-                    data = gp.loadbi(path,set_config["type"])
+                    data = gp.loadbi(path,config["type"])
 
                     if trig == ch:
-                        set_main = set["main"]
+                        analysis = setting["main"]
                     else:
-                        set_main = set["main2"]
-
+                        analysis = setting["main2"]
                     
-                    if set_main['cutoff'] > 0:
-                        data = gp.BesselFilter(data,rate,set_main['cutoff'])
-                    base,data = gp.baseline(data,presamples,set_main['base_x'],set_main['base_w'])
+                    if analysis['cutoff'] > 0:
+                        data = gp.BesselFilter(data,rate,analysis['cutoff'])
+                    base,data = gp.baseline(data,presamples,analysis['base_x'],analysis['base_w'])
 
-                    mv = gp.moving_average(data,set_main["mv_w"])
-                    mv_padding = np.pad(mv,(int(set_main["mv_w"]/2-1),int(set_main["mv_w"]/2)),"constant")
+                    mv = gp.moving_average(data,analysis["mv_w"])
+                    mv_padding = np.pad(mv,(int(analysis["mv_w"]/2-1),int(analysis["mv_w"]/2)),"constant")
                     dif = gp.diff(mv_padding)*50000
                     dif = gp.diff(dif)
 
                         
-                    peak,peak_av,peak_index = gp.peak(data,presamples,set_main['peak_max'],set_main['peak_x'],set_main['peak_w'])
+                    peak,peak_av,peak_index = gp.peak(data,presamples,analysis['peak_max'],analysis['peak_x'],analysis['peak_w'])
                     rise,rise_10,rise_90 = gp.risetime(data,peak_av,peak_index,rate)
                     decay,decay_10,decay_90 = gp.decaytime(data,peak_av,peak_index,rate)
 
@@ -251,14 +247,14 @@ if __name__ == '__main__':
 
                     if fitting_mode:
                         x_fit = np.arange(presamples-5,samples,0.1)
-                        popt,rSquared = gp.fitExp(gp.fit_func(set_main['fit_func']),data,presamples+set_main['fit_x'],set_main['fit_w'],p0 = set_main['fit_p0'])
-                        if set_main['fit_func'] == "monoExp":
+                        popt,rSquared = gp.fitExp(gp.fit_func(analysis['fit_func']),data,presamples+analysis['fit_x'],analysis['fit_w'],p0 = analysis['fit_p0'])
+                        if analysis['fit_func'] == "monoExp":
                             tau_rise = 0
                             tau_decay = 1/popt[1]/rate
-                        if set_main['fit_func'] == "doubleExp":
+                        if analysis['fit_func'] == "doubleExp":
                             tau_rise = popt[1]/rate
                             tau_decay = popt[3]/rate
-                        fit_func = gp.fit_func(set_main["fit_func"])
+                        fit_func = gp.fit_func(analysis["fit_func"])
                         fitting = fit_func(x_fit,*popt)
 
                         print(f'tau_rise : {tau_rise:.5f}' )
@@ -266,7 +262,7 @@ if __name__ == '__main__':
                         print(f'rSqared: {rSquared:.5f}')
 
                     
-                    if set_main['cutoff'] > 0:
+                    if analysis['cutoff'] > 0:
                         plt.plot(time,data,markersize=1,label=f"rawdata_ch{ch} filt")
                     else:
                         plt.plot(time,data,markersize=1,label=f"rawdata_ch{ch}")
@@ -281,7 +277,7 @@ if __name__ == '__main__':
                     plt.scatter(time[presamples],data[presamples], color='magenta', label ='risepoint',zorder = 2)
                     plt.legend()
 
-                gp.graugh_condition(set)
+                gp.graugh_condition(setting["graugh"])
                 plt.xlabel("time(s)")
                 plt.ylabel("volt(V)")
                 plt.grid()
@@ -289,7 +285,7 @@ if __name__ == '__main__':
                 plt.show()
                 plt.cla()
             except Exception as e:
-                print()
+                print(e)
 
             
             
@@ -301,18 +297,18 @@ if __name__ == '__main__':
             # Processing
             path = f'CH{ch}_pulse/rawdata/CH{ch}_{num}.dat'
             try:
-                data = gp.loadbi(path,set_config["type"])
+                data = gp.loadbi(path,config["type"])
                 plt.show()
                 plt.cla()
-                base,data = gp.baseline(data,presamples,set_main['base_x'],set_main['base_w'])
-                mv = gp.moving_average(data,set_main['mv_w'])
+                base,data = gp.baseline(data,presamples,analysis['base_x'],analysis['base_w'])
+                mv = gp.moving_average(data,analysis['mv_w'])
                 dif  = gp.diff(mv)
 
-                if set_main['cutoff'] > 0:
-                    data = gp.BesselFilter(data,rate,set_main['cutoff'])
+                if analysis['cutoff'] > 0:
+                    data = gp.BesselFilter(data,rate,analysis['cutoff'])
 
                 # Analysis
-                peak,peak_av,peak_index = gp.peak(data,presamples,set_main['peak_max'],set_main['peak_x'],set_main['peak_w'])
+                peak,peak_av,peak_index = gp.peak(data,presamples,analysis['peak_max'],analysis['peak_x'],analysis['peak_w'])
                 rise,rise_10,rise_90 = gp.risetime(data,peak_av,peak_index,rate)
                 decay,decay_10,decay_90 = gp.decaytime(data,peak_av,peak_index,rate)
 
@@ -329,14 +325,14 @@ if __name__ == '__main__':
                 # Fitting
                 if fitting_mode:
                     x_fit = np.arange(presamples-5,samples,0.1)
-                    popt,rSquared = gp.fitExp(gp.fit_func(set_main['fit_func']),data,presamples+set_main['fit_x'],set_main['fit_w'],p0 = set_main['fit_p0'])
-                    if set_main['fit_func'] == "monoExp":
+                    popt,rSquared = gp.fitExp(gp.fit_func(analysis['fit_func']),data,presamples+analysis['fit_x'],analysis['fit_w'],p0 = analysis['fit_p0'])
+                    if analysis['fit_func'] == "monoExp":
                         tau_rise = 0
                         tau_decay = 1/popt[1]/rate
-                    if set_main['fit_func'] == "doubleExp":
+                    if analysis['fit_func'] == "doubleExp":
                         tau_rise = popt[1]/rate
                         tau_decay = popt[3]/rate
-                    fit_func = gp.fit_func(set_main["fit_func"])
+                    fit_func = gp.fit_func(analysis["fit_func"])
                     fitting = fit_func(x_fit,*popt)
 
                     print(f'tau_rise : {tau_rise:.5f}' )
@@ -345,14 +341,14 @@ if __name__ == '__main__':
 
 
                 # Graugh
-                if set_main['cutoff'] > 0:
+                if analysis['cutoff'] > 0:
                     plt.plot(time,data,'o',markersize=1,label=f"rawdata_ch{ch} data")
                 else:
                     plt.plot(time,data,'o',markersize=1,label=f"rawdata_ch{ch}")
                 if fitting_mode:
                     plt.plot(x_fit/rate,fitting,'-.',color="skyblue",label = 'fitting')
                 #plt.plot(time[:samples-set['main']['mv_w']+1],mv,label = "mv")
-                plt.plot(time[presamples-set_main['base_x']:presamples-set_main['base_x']+set_main['base_w']],data[presamples-set_main['base_x']:presamples-set_main['base_x']+set_main['base_w']],'-',linewidth=2,color="lightpink",label="base")
+                plt.plot(time[presamples-analysis['base_x']:presamples-analysis['base_x']+analysis['base_w']],data[presamples-analysis['base_x']:presamples-analysis['base_x']+analysis['base_w']],'-',linewidth=2,color="lightpink",label="base")
                 plt.plot(time[rise_10:rise_10],data[rise_10:rise_10],'-',color='royalblue',label="rise")
                 plt.scatter(time[rise_10],data[rise_10],color = 'royalblue',label='rise')
                 plt.scatter(time[rise_90],data[rise_90],color = 'royalblue')
@@ -361,22 +357,23 @@ if __name__ == '__main__':
             
                 plt.xlabel("time(s)")
                 plt.ylabel("volt(V)")
-                gp.graugh_condition(set)
+                gp.graugh_condition(setting["graugh"])
                 plt.title(os.path.basename(path).replace('.dat',''))
                 plt.grid()
                 plt.legend()
                 plt.show()
                 plt.cla()
 
-                if set['graugh']['diff']:
-                    gp.graugh('diff pulse',dif,time[:samples-set['main']['mv_w']+1])
+                if setting['graugh']['diff']:
+                    gp.graugh('diff pulse',dif,time[:samples-analysis['mv_w']+1])
                     plt.show()
             except Exception as e:
                 print(e)
     
-    jsn = json.dumps(set,indent=4)
-    with open(f"{os.path.dirname(__file__)}/setting.json", 'w') as file:
-        file.write(jsn)
+    gp.saveJson(setting,path=output)
+
+if __name__ == "__main__":
+    main()
     print("end")
     print('---------------------------\n')
 

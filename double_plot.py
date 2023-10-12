@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 from tkinter import filedialog
 import getpara as gp
 import numpy as np
+import os
 
 
 def main():
@@ -20,6 +21,7 @@ def main():
 	plt.plot(time*1000,data2)
 	plt.xlabel("time [ms]")
 	plt.ylabel("volt [V]")
+	plt.savefig(f"{os.path.dirname(path1)}/double_plot.png")
 	plt.show()
 
 main()

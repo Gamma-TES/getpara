@@ -28,8 +28,6 @@ import platform
 # ex) "samples-=":100000
 
 
-
-
 ax_unit = {
 	"base":'base[V]',
 	"height":'pulse height[V]',
@@ -45,76 +43,37 @@ ax_unit = {
 }
 
 
-
 def main():
 
 	ax = sys.argv
 	ax.pop(0)
+	if len(ax) == 0:
+		print("axis needed!!")
+		exit()
 	
-	set = gp.loadJson()
+	#----- Initialize ------------------------------------------
+	setting = gp.loadJson()
+	config = setting["Config"]
+	os.chdir(config["path"])
+	
 
-	# default condition
-	para = {'select':{
-	'samples-=':set['Config']['samples'],
-	'height->':set['Config']['threshold'],
-	'rSquared->':0,
-	'quality!=':0
-	}}
-
-	if not 'select' in set:
-		set.update(para)
-		jsn = json.dumps(set,indent=4)
-		with open("setting.json", 'w') as file:
-			file.write(jsn)
-
-	os.chdir(set["Config"]["path"])
-	set_config = set["Config"]
-
-	output = f'CH{set["Config"]["channel"]}_pulse/output/{set["Config"]["output"]}'
-	print(output)
+	output = f'CH{config["channel"]}_pulse/output/{config["output"]}'
 	df = pd.read_csv((f'{output}/output.csv'),index_col=0)
-	rate,samples,presamples,threshold,ch = set["Config"]["rate"],set["Config"]["samples"],set["Config"]["presamples"],set["Config"]["threshold"],set["Config"]["channel"]
+	rate,samples,presamples,threshold,ch = config["rate"],config["samples"],config["presamples"],config["threshold"],config["channel"]
 	time = gp.data_time(rate,samples)
-
-	if '-p' in ax:
-		ax.remove('-p')
-		mode = 'post'
-		post_ch = [re.sub(r"\D", "", i) for i in glob.glob('CH*_pulse')]
-		print(post_ch)
-
-		if "channel_2" not in set["select"]:
-			ch2= input("the other channel: ")
-			if ch2 in post_ch:
-				set['select']['channel_2'] = ch2
-			else:
-				print("non exist channel")
-				sys.exit()
-		
-		ch2 = set['select']['channel_2']
-		output2 = f'CH{ch2}_pulse/output/{set["Config"]["output"]}'
-		df2 = pd.read_csv((f'{output2}/output.csv'),index_col=0)
-
-		try:
-			trig_ch = np.loadtxt('channel.txt')
-		except:
-			trig_ch = np.zeros(len(df))
-		
-		for i in post_ch:
-			print(f"CH{ch} triggered: {np.count_nonzero(trig_ch==ch)} count")
-
-	else:
-		mode = "single"
-		set_main = set["main"]
-		trig = int(ch)
+	
+	try:
+		trig_ch = np.loadtxt('channel.txt')
+	except:
+		trig_ch = np.zeros(len(df))
 	
 
-	# manual select
-	df_clear = gp.select_condition(df,set)
-	
+	#----- select condition -------------------------------------------
+	df_clear = gp.select_condition(df,setting["select"])
 	print(f'Pulse : {len(df_clear)} samples')
-	   
-	
 
+
+	#----- plot data -------------------------------------------------
 	# time vs ax
 	if len(ax) == 1:
 		y = gp.extruct(df_clear,ax)
@@ -125,7 +84,7 @@ def main():
 		plt.savefig(f'{output}/{ax[0]}.png')
 		plt.show()
 
-
+	# ax vs ax
 	elif len(ax) == 2:
 		x,y = gp.extruct(df_clear,*ax)
 		plt.scatter(x,y,s=2,alpha=0.7)
@@ -137,22 +96,29 @@ def main():
 		plt.show()
 		plt.cla()
 		
-		if input('exit[1]: ') == "1":
+		#----- choose creating selected output or no ---------------------------
+		output_select = input('output: ')
+		if output_select == "":
+			print("Exit")
 			exit()
-		out_select = input('output name:')
-		set['select']['output'] = out_select
-		print(set["select"])
-
-
-		output_f = f'{output}/{out_select}'
-		if not os.path.exists(f"{output_f}/img"):
-			os.makedirs(f"{output_f}/img",exist_ok=True)
 		else:
-			shutil.rmtree(f"{output_f}/img")
-			os.mkdir(f"{output_f}/img")
+			setting['select']['output'] = output_select
 
-		picked = gp.pickSamples(df_clear,*ax).tolist() # pick samples from graugh
+		# create output dir
+		output_select = f'{output}/{output_select}'
+		if not os.path.exists(f"{output_select}/img"):
+			os.makedirs(f"{output_select}/img",exist_ok=True)
+		else:
+			shutil.rmtree(f"{output_select}/img")
+			os.mkdir(f"{output_select}/img")
+
+		#---------------------------------------------------------------------
+
+		# pick samples from graugh
+		x,y = gp.extruct(df_clear,*ax)
+		picked = gp.pickSamples(df_clear,x,y)
 		print(f"Selected {len((picked))} samples.")
+
 
 		# graugh picked samples
 		x_sel,y_sel =gp.extruct(df_clear.loc[picked],*ax)
@@ -162,64 +128,54 @@ def main():
 		plt.ylabel(ax_unit[ax[1]])
 		plt.title(f"{ax[0]} vs {ax[1]}")
 		plt.grid()
-		plt.savefig(f'{output_f}/{ax[0]} vs {ax[1]}_sel_ch{ch}.png')
+		plt.savefig(f'{output_select}/{ax[0]}_{ax[1]}_selected.png')
 		plt.show()
 		plt.cla()
 
+		# one sumple
 		if len(picked) == 1:
 			path = f'CH{ch}_pulse/rawdata/CH{ch}_{picked[0]}.dat'
-			picked_data = gp.loadbi(path,set_config["type"])
+			picked_data = gp.loadbi(path,config["type"])
 			print(df_clear.loc[path]) 
 			gp.graugh(path,picked_data,time)
-			gp.graugh_condition(set)
+			gp.graugh_condition(setting)
 			plt.show()
+
+		# multi sumples
 		else:
-			# average pulse
 			for num in tqdm.tqdm(picked):
 				path = f'CH{ch}_pulse/rawdata/CH{ch}_{num}.dat'
-				data = gp.loadbi(path,set_config["type"])
+				data = gp.loadbi(path,config["type"])
 
-				if mode == 'post':
-					trig = trig_ch[int(num)-1]
-					if trig == int(ch):
-						set_main = set["main"]
-					else:
-						set_main = set["main2"]
+				# triggerd channel?
+				trig = trig_ch[int(num)-1]
+				if trig == int(ch):
+					analysis = setting["main"]
+				else:
+					analysis = setting["main2"]
 
-				base,data = gp.baseline(data,presamples,set_main['base_x'],set_main['base_w'])
-				if set_main['cutoff'] > 0:
-					data = gp.BesselFilter(data,rate,fs = set_main['cutoff'])
+				
+				base,data = gp.baseline(data,presamples,analysis['base_x'],analysis['base_w'])
+				if analysis['cutoff'] > 0:
+					data = gp.BesselFilter(data,rate,fs = analysis['cutoff'])
+
+				# save onetime rawdata figures
 				plt.plot(time,data)
-				gp.graugh_condition(set)
+				gp.graugh_condition(setting["graugh"])
 				plt.title(f'CH{ch} {num}')
 				plt.xlabel("time(s)")
 				plt.ylabel("volt(V)")
-				plt.savefig(f'{output_f}/img/{num}.png')
+				plt.savefig(f'{output_select}/img/{num}.png')
 				plt.cla()
 
-			np.savetxt(f'{output_f}/selected_index.txt',picked,fmt="%s")
-			
-		   
-			if mode == "post":
-				df_sel2 = df2.loc[picked]
-				x2,y2 = gp.extruct(df2,*ax)
-				x2_sel,y2_sel = gp.extruct(df_sel2,*ax)
-				plt.scatter(x2,y2,s=2,alpha=0.7)
-				plt.scatter(x2_sel,y2_sel,s=4)
-				plt.xlabel(ax_unit[ax[0]])
-				plt.ylabel(ax_unit[ax[1]])
-				plt.title(f"{ax[0]} vs {ax[1]}")
-				plt.grid()
-				plt.savefig(f'{output_f}/{ax[0]} vs {ax[1]}_sel_ch{ch2}.png')
-				plt.show()
-				plt.cla()
+			np.savetxt(f'{output_select}/selected_index.txt',picked,fmt="%s")
 
 
-			# delete noise data
+			#----- delete noise data ---------------------------------------------
 			if platform.system() != "Darwin":
 				try:
 					root  = tk.Tk()
-					fle = filedialog.askopenfilenames(initialdir=f"{output_f}/img")
+					fle = filedialog.askopenfilenames(initialdir=f"{output_select}/img")
 					root.withdraw()
 				except:
 					fle = []
@@ -229,55 +185,48 @@ def main():
 			for f in fle:
 				num =  int(re.findall(r'\d+', os.path.basename(f))[0])              
 				picked.remove(num)
-				os.remove(f'{output_f}/img/{num}.png')
-				np.savetxt(f'{output_f}/selected_index.txt',picked,fmt="%s")
-				df.at[num,"quality"] = 0
-
+				os.remove(f'{output_select}/img/{num}.png')
+				np.savetxt(f'{output_select}/selected_index.txt',picked,fmt="%s")
+				df.at[num,"error"] = 0
+			#-------------------------------------------------------------------
 			
 
-			# create average pulse
+			#----- create average pulse ---------------------------------------
 			print('Creating Average Pulse...')
 			array = []
 			for num in picked:
 				path = f'CH{ch}_pulse/rawdata/CH{ch}_{num}.dat'
-				data = gp.loadbi(path,set_config["type"])
-				base,data = gp.baseline(data,presamples,set_main['base_x'],set_main['base_w'])
-				if set_main['cutoff'] > 0:
-					data = gp.BesselFilter(data,rate,set_main['cutoff'])
-				
+				data = gp.loadbi(path,config["type"])
+				base,data = gp.baseline(data,presamples,analysis['base_x'],analysis['base_w'])
+				if analysis['cutoff'] > 0:
+					data = gp.BesselFilter(data,rate,analysis['cutoff'])
 				array.append(data)
 			av = np.mean(array,axis=0)
 
+			# plot averate pulse
 			plt.plot(time,av)
-			gp.graugh_condition(set)
+			gp.graugh_condition(setting["graugh"])
 			plt.xlabel("time(s)")
 			plt.ylabel("volt(V)")
 			plt.title("average pulse")
-			plt.savefig(f'{output_f}/average_pulse.png')
+			plt.savefig(f'{output_select}/average_pulse.png')
 			plt.show()
 
+			# log scale
 			plt.cla()
 			plt.plot(time,av)
 			plt.xlabel("time(s)")
 			plt.ylabel("volt(V)")
 			plt.title("average pulse")
 			plt.yscale('log')
-			plt.savefig(f'{output_f}/average_pulse_log.png')
+			plt.savefig(f'{output_select}/average_pulse_log.png')
 			plt.show()
 
-			np.savetxt(f'{output_f}/average_pulse.txt',av)
+			np.savetxt(f'{output_select}/average_pulse.txt',av)
 
-			jsn = json.dumps(set,indent=4)
-			with open(f'{output_f}/setting.json', 'w') as file:
-				file.write(jsn)
 	
-	
-	jsn = json.dumps(set,indent=4)
-	with open(f"{os.path.dirname(__file__)}/setting.json", 'w') as file:
-		file.write(jsn)
-
+	gp.saveJson(setting,path=output_select)
 	df.to_csv(f'{output}/output.csv')
-
 
 #実行
 if __name__=='__main__':

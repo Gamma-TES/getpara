@@ -22,7 +22,7 @@ def main():
 	output = os.path.dirname(_path)
 
 
-	ch = 1 #input("cahnnel: ")
+	ch = input("cahnnel: ")
 	df_path = f'CH{ch}_pulse/output/{config["output"]}/output.csv'
 	df = pd.read_csv(df_path,index_col=0)
 	#df = gp.select_condition(df,setting)
@@ -39,7 +39,7 @@ def main():
 	plt.title(f"{ax[0]} vs {ax[1]}")
 	plt.grid()
 	plt.savefig(f'{output}/{ax[0]} vs {ax[1]}_sel_ch{ch}.png')
-	#plt.show()
+	plt.show()
 	plt.cla()
 
 	array = []
@@ -60,7 +60,7 @@ def main():
 	plt.ylabel("volt(V)")
 	plt.title("average pulse")
 	plt.savefig(f'{output}/selected_average_pulse.png')
-	#plt.show()
+	plt.show()
 	plt.cla()
 
 
