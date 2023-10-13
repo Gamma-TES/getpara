@@ -12,6 +12,8 @@ import re
 from tkinter import filedialog 
 import platform
 import tkinter as tk
+import tqdm
+
 
 def overlap(df_0,df_1):
 	#index_0,index_1 = df_0.index.values,df_1.index.values
@@ -24,16 +26,16 @@ def overlap(df_0,df_1):
 	
 	return df_comp_0,df_comp_1
 
+
 def df_number(df):
 	index= df.index.values
 	num = [re.findall(r'\d+', i)[2] for i in index]
 	df['number'] = num
 	return df
-	
+
 
 def main():
 	ax = sys.argv
-	
 	ch0 = 0
 	ch1 = 1
 	para = "height"
@@ -43,7 +45,6 @@ def main():
 	time = gp.data_time(rate,samples)
 	os.chdir(config["path"])
 
-	
 
 	output_0 = f'CH{ch0}_pulse/output/{config["output"]}'
 	output_1 = f'CH{ch1}_pulse/output/{config["output"]}'
@@ -62,7 +63,7 @@ def main():
 
 	df_0_over,df_1_over = overlap(df_0_clear,df_1_clear)
 	x,y = df_0_over[para],df_1_over[para]
-
+	
 	plt.scatter(x,y,s=0.4)
 	plt.xlabel(f'channel {ch0} [V]')
 	plt.ylabel(f'channel {ch1} [V]')
@@ -90,7 +91,7 @@ def main():
 		
 	# pick samples from graugh
 	
-	picked = gp.pickSamples(df_0_clear,x,y)
+	picked = gp.pickSamples(df_0_over,x,y)
 	print(f"Selected {len((picked))} samples.")
 
 	# graugh picked samples
@@ -106,8 +107,8 @@ def main():
 	plt.cla()
 
 	for ch in [ch0,ch1]:
-		#----- create average pulse ---------------------------------------
-		for num in picked:
+		#----- create onetime pulse ---------------------------------------
+		for num in tqdm.tqdm(picked):
 			trig = trig_ch[int(num)-1]
 			if trig == int(ch):
 				analysis = setting["main"]
@@ -157,7 +158,7 @@ def main():
 		print('Creating Average Pulse...')
 		array = []
 
-		for num in picked:
+		for num in tqdm.tqdm(picked):
 			trig = trig_ch[int(num)-1]
 			if trig == int(ch):
 				analysis = setting["main"]
@@ -171,8 +172,6 @@ def main():
 			array.append(data)
 		av = np.mean(array,axis=0)
 
-	
-
 
 		# plot averate pulse
 		plt.plot(time,av)
@@ -180,7 +179,7 @@ def main():
 		plt.xlabel("time(s)")
 		plt.ylabel("volt(V)")
 		plt.title("average pulse")
-		plt.savefig(f'{output_select}/average_pulse_{ch}.png')
+		plt.savefig(f'{output_select}/CH{ch}/average_pulse_{ch}.png')
 		plt.show()
 
 		# log scale
@@ -190,38 +189,13 @@ def main():
 		plt.ylabel("volt(V)")
 		plt.title("average pulse")
 		plt.yscale('log')
-		plt.savefig(f'{output_select}/average_pulse_{ch}_log.png')
+		plt.savefig(f'{output_select}/CH{ch}/average_pulse_{ch}_log.png')
 		plt.show()
 
-		np.savetxt(f'{output_select}/average_pulse_{ch}.txt',av)
+		np.savetxt(f'{output_select}/CH{ch}/average_pulse_{ch}.txt',av)
 
-
-
-
-	
-	path = filedialog.askopenfilename(filetypes=[('index file','*.txt')])
-
-	selectdata = gp.loadIndex(path)
- 
-	df_select_0 = df_0_over[df_0_over.index.isin(selectdata)]
-	df_select_1 = df_1_over[df_1_over.index.isin(selectdata)]
-	
-	x_select,y_select = df_select_0[para],df_select_1[para]
-	print(x_select)
-	plt.scatter(x,y,s=2,alpha=0.5)
-	plt.scatter(x_select,y_select,s=2,alpha=1,color="red")
-	plt.xlabel(f'channel {ch0}')
-	plt.xlabel(f'channel {ch1}')
-	plt.title(para)
-	plt.grid()
-	plt.show()
-	plt.cla()
 	#a = df.loc['CH0_pulse/rawdata\CH0_47388.dat']
-	
-	
-	
-	
 
-#実行
+
 if __name__=='__main__':
 	main()

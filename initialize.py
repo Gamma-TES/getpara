@@ -55,8 +55,10 @@ main2_para = {"main2": {
 # Json形式へ変更
 
 def main():
+
     path = filedialog.askdirectory()
     output = input("output name:")
+
     post_ch = glob.glob(f'{path}/CH*_*')
     print(f"{path}/setting.txt")
     try:
@@ -71,8 +73,7 @@ def main():
                 "threshold" : setting[6],
                 "output" : output,
                 "type": 'binary'
-            }
-        }
+            }}
     except:
         print("Not exist setting.txt !")
         setting_json = {
@@ -113,8 +114,9 @@ def main():
         "diff":False
         }}
     #--------------------------------------------------------------------------
-    setting_json.update(para,graugh_para)
 
+    setting_json.update(para)
+    setting_json.update(graugh_para)
     jsn = json.dumps(setting_json,indent=4)
 
     # current directry

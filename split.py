@@ -4,12 +4,13 @@ import numpy as np
 import pandas as pd
 import matplotlib.cm as cm
 import os
+import tqdm
 
 # parameter 
 para = "height" 
 n_block = 11
 a_ini = 1.5 # y = ax + 1
-resolution = 0.0001 # a decrement
+resolution = 0.00005 # a decrement
 
 cmap = cm.get_cmap("hsv")
 
@@ -20,12 +21,13 @@ def func(x,a):
 
 
 def main():
-	print("start")
 
 	setting = gp.loadJson()
 	
 	config = setting["Config"]
+	select = setting["select"]
 	os.chdir(config["path"])
+
 	output_0 = f'CH{0}_pulse/output/{config["output"]}'
 	output_1 = f'CH{1}_pulse/output/{config["output"]}'
 
@@ -34,8 +36,8 @@ def main():
 	df_0 = pd.read_csv((f'{output_0}/output.csv'),index_col=0)
 	df_1 = pd.read_csv((f'{output_1}/output.csv'),index_col=0)
 	
-	df_0 = gp.select_condition(df_0,setting)
-	df_1 = gp.select_condition(df_1,setting)
+	df_0 = gp.select_condition(df_0,select=select)
+	df_1 = gp.select_condition(df_1,select=select)
 
 	df_0_lap,df_1_lap = gp.overlap(df_0,df_1)
 
@@ -66,7 +68,7 @@ def main():
 	plt.cla()
 
 	plt.plot(x_line,y_line_down,"--",linewidth=1,markersize=1,color="orange",alpha=0.7)
-	for i in a_array:
+	for i in tqdm.tqdm(a_array):
 
 		for index in df_0_lap.index:
 
@@ -78,8 +80,6 @@ def main():
 				sel.add(int(index))
 
 				if len(sel) == block:
-					
-					print(i)
 					a_line.append(i)
 
 					a = i
@@ -95,6 +95,8 @@ def main():
 					n+=1
 					if n == n_block-1:
 						block = length%block+block
+					
+					
 
 					# initialize sel
 					sel = []
@@ -107,7 +109,11 @@ def main():
 
 					plt.scatter(x,y,s=2,color = cmap((float(n))/float(n_block)))
 					plt.plot(x_line,y_line_down,"--",linewidth=1,markersize=0.7,color="orange",alpha=0.7)
-		
+
+					if n == n_block:
+						break
+	
+	print(a_line)
 			
 	#plt.scatter(x,y,s=2,alpha=0.7)
 	plt.grid()
