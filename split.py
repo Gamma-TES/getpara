@@ -5,12 +5,13 @@ import pandas as pd
 import matplotlib.cm as cm
 import os
 import tqdm
+import glob
 
 # parameter 
 para = "height" 
 n_block = 11
 a_ini = 1.5 # y = ax + 1
-resolution = 0.00005 # a decrement
+resolution = 0.00001 # a decrement
 
 cmap = cm.get_cmap("hsv")
 
@@ -27,6 +28,8 @@ def main():
 	config = setting["Config"]
 	select = setting["select"]
 	os.chdir(config["path"])
+
+	ch = config["channel"]
 
 	output_0 = f'CH{0}_pulse/output/{config["output"]}'
 	output_1 = f'CH{1}_pulse/output/{config["output"]}'
@@ -47,6 +50,7 @@ def main():
 	print(f"length: {length}")
 	print(f"1-block: {block}")
 
+
 	x,y = df_0_lap[para],df_1_lap[para]
 
 
@@ -56,6 +60,7 @@ def main():
 
 	x_line = np.arange(0,1,0.001)
 	
+
 	a_line = []
 	sel = []
 	sel = set(sel)
@@ -75,8 +80,7 @@ def main():
 			# check up or down
 			if (func(df_0_lap.at[index,para],i) < df_1_lap.at[index,para]) \
 				and func(df_0_lap.at[index,para],a) > df_1_lap.at[index,para]:
-				
-					
+
 				sel.add(int(index))
 
 				if len(sel) == block:
@@ -87,21 +91,17 @@ def main():
 
 					# cast set to int list
 					indexs = [int(float(i)) for i in list(sel)]
-					
 					# save text
-					np.savetxt(f"CH{0}_pulse/output/{config['output']}/block/block_{n}.txt",indexs)
+					np.savetxt(f"CH{ch}_pulse/output/{config['output']}/block/block_{n}.txt",indexs)
 
 					# block increment
 					n+=1
 					if n == n_block-1:
 						block = length%block+block
 					
-					
-
 					# initialize sel
 					sel = []
 					sel = set(sel)
-
 
 					# plot block
 					df_sel_0,df_sel_1 = df_0_lap.loc[indexs],df_1_lap.loc[indexs]
@@ -109,9 +109,8 @@ def main():
 
 					plt.scatter(x,y,s=2,color = cmap((float(n))/float(n_block)))
 					plt.plot(x_line,y_line_down,"--",linewidth=1,markersize=0.7,color="orange",alpha=0.7)
-
-					if n == n_block:
-						break
+		if len(a_line) == n_block:
+			break
 	
 	print(a_line)
 			
@@ -119,7 +118,7 @@ def main():
 	plt.grid()
 	plt.xlabel(f"Pulse Height (CH0) [V]")
 	plt.ylabel(f"Pulse Height (CH1) [V]")
-	plt.savefig(f"CH{0}_pulse/output/{config['output']}/block/blocks.png")
+	plt.savefig(f"CH{ch}_pulse/output/{config['output']}/block/blocks.png")
 	plt.show()
 	
 	plt.cla()

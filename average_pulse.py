@@ -7,8 +7,7 @@ import pandas as pd
 import sys
 
 def main():
-	ax = sys.argv
-	ax.pop(0)
+	
 
 	setting = gp.loadJson()
 	config = setting["Config"]
@@ -17,9 +16,9 @@ def main():
 	time = gp.data_time(config['rate'],config['samples'])
 	os.chdir(config["path"])
 
-	_path = filedialog.askopenfilename(filetypes=[('index file','*.txt')])
-	idx = gp.loadIndex(_path)
-	output = os.path.dirname(_path)
+	path = filedialog.askopenfilename()
+	idx = gp.loadIndex(path)
+	output = os.path.dirname(path)
 
 
 	ch = input("cahnnel: ")
@@ -27,6 +26,9 @@ def main():
 	df = pd.read_csv(df_path,index_col=0)
 	#df = gp.select_condition(df,setting)
 	
+	ax = sys.argv
+	ax.pop(0)
+	print(ax)
 	x,y = gp.extruct(df,*ax)
 	df_sel = df.loc[idx]
 	
@@ -55,7 +57,7 @@ def main():
 	np.savetxt(f'{output}/selected_average_pulse.txt',av)
 
 	plt.plot(time,av)
-	gp.graugh_condition(setting)
+	gp.graugh_condition(setting["graugh"])
 	plt.xlabel("time(s)")
 	plt.ylabel("volt(V)")
 	plt.title("average pulse")

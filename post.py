@@ -35,7 +35,6 @@ def df_number(df):
 
 
 def main():
-	ax = sys.argv
 	ch0 = 0
 	ch1 = 1
 	para = "height"
@@ -71,6 +70,23 @@ def main():
 	plt.grid()
 	plt.savefig(f'{output_0}/pulse_height_CH{ch0}_CH{ch1}.png')
 	plt.show()
+
+	if "-s" in ax:
+
+		fle = filedialog.askopenfilename(filetypes=[('index file','*.txt')])
+
+		selected = gp.loadIndex(fle)
+		x_sel,y_sel = df_0_over.loc[selected][para],df_1_over.loc[selected][para]
+
+		plt.scatter(x,y,s=2,alpha=0.7)
+		plt.scatter(x_sel,y_sel,s=4)
+		plt.xlabel(f'channel {ch0} [V]')
+		plt.ylabel(f'channel {ch1} [V]')
+		plt.grid()
+		plt.savefig(f'{output_select}/pulse_height_{ch0}_{ch1}selected_index.png')
+		plt.show()
+		plt.cla()
+
 
 	#----- choose creating selected output or no ---------------------------
 	output_select = input('output: ')
@@ -131,6 +147,7 @@ def main():
 		np.savetxt(f'{output_select}/selected_index.txt',picked,fmt="%s")
 
 	#----- delete noise data ---------------------------------------------
+
 		if platform.system() != "Darwin":
 			try:
 				print(output_select)
@@ -195,6 +212,8 @@ def main():
 		np.savetxt(f'{output_select}/CH{ch}/average_pulse_{ch}.txt',av)
 
 	#a = df.loc['CH0_pulse/rawdata\CH0_47388.dat']
+
+	
 
 
 if __name__=='__main__':
