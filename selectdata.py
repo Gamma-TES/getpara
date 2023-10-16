@@ -50,6 +50,9 @@ def main():
 	if len(ax) == 0:
 		print("axis needed!!")
 		exit()
+
+	root  = tk.Tk()
+	root.withdraw()
 	
 	#----- Initialize ------------------------------------------
 	setting = gp.loadJson()
@@ -172,14 +175,10 @@ def main():
 
 
 			#----- delete noise data ---------------------------------------------
-			if platform.system() != "Darwin":
-				try:
-					root  = tk.Tk()
-					fle = filedialog.askopenfilenames(initialdir=f"{output_select}/img")
-					root.withdraw()
-				except:
-					fle = []
-			else:
+			try:
+				fle = filedialog.askopenfilenames(initialdir=f"{output_select}/img")
+				root.withdraw()
+			except:
 				fle = []
 
 			for f in fle:
