@@ -13,7 +13,7 @@ n_block = 11
 a_ini = 1.5 # y = ax + 1
 resolution = 0.00001 # a decrement
 
-cmap = cm.get_cmap("hsv")
+
 
 def func(x,a):
 	return a*x
@@ -67,9 +67,8 @@ def main():
 
 	n = 0
 	y_line_down = func(x_line,a)
-	plt.scatter(x,y,s=2,color = cmap((float(n))/float(n_block)))
 	plt.plot(x_line,y_line_down,"--",linewidth=1,markersize=1,color="orange",alpha=0.7)
-	plt.show()
+	
 	plt.cla()
 
 	plt.plot(x_line,y_line_down,"--",linewidth=1,markersize=1,color="orange",alpha=0.7)
@@ -95,8 +94,8 @@ def main():
 					np.savetxt(f"CH{ch}_pulse/output/{config['output']}/block/block_{n}.txt",indexs)
 
 					# block increment
-					n+=1
-					if n == n_block-1:
+					
+					if n == n_block:
 						block = length%block+block
 					
 					# initialize sel
@@ -107,8 +106,10 @@ def main():
 					df_sel_0,df_sel_1 = df_0_lap.loc[indexs],df_1_lap.loc[indexs]
 					x,y = df_sel_0[para],df_sel_1[para]
 
-					plt.scatter(x,y,s=2,color = cmap((float(n))/float(n_block)))
+					plt.scatter(x,y,s=2,color = cm.hsv((float(n))/float(n_block)))
 					plt.plot(x_line,y_line_down,"--",linewidth=1,markersize=0.7,color="orange",alpha=0.7)
+					
+					n+=1
 		if len(a_line) == n_block:
 			break
 	
