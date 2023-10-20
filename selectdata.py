@@ -139,9 +139,8 @@ def main():
 		if len(picked) == 1:
 			path = f'CH{ch}_pulse/rawdata/CH{ch}_{picked[0]}.dat'
 			picked_data = gp.loadbi(path,config["type"])
-			print(df_clear.loc[path]) 
 			gp.graugh(path,picked_data,time)
-			gp.graugh_condition(setting)
+			gp.graugh_condition(setting["graugh"])
 			plt.show()
 
 		# multi sumples

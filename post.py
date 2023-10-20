@@ -71,21 +71,6 @@ def main():
 	plt.savefig(f'{output_0}/pulse_height_CH{ch0}_CH{ch1}.png')
 	plt.show()
 
-	if "-s" in ax:
-
-		fle = filedialog.askopenfilename(filetypes=[('index file','*.txt')])
-
-		selected = gp.loadIndex(fle)
-		x_sel,y_sel = df_0_over.loc[selected][para],df_1_over.loc[selected][para]
-
-		plt.scatter(x,y,s=2,alpha=0.7)
-		plt.scatter(x_sel,y_sel,s=4)
-		plt.xlabel(f'channel {ch0} [V]')
-		plt.ylabel(f'channel {ch1} [V]')
-		plt.grid()
-		plt.savefig(f'{output_select}/pulse_height_{ch0}_{ch1}selected_index.png')
-		plt.show()
-		plt.cla()
 
 
 	#----- choose creating selected output or no ---------------------------

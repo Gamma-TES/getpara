@@ -1,3 +1,5 @@
+
+
 import matplotlib.pyplot as plt
 from tkinter import filedialog
 import getpara as gp
@@ -7,6 +9,7 @@ import natsort
 import matplotlib.cm as cm
 import tkinter as tk
 import itertools
+import plt_config
 
 
 def main():
@@ -46,7 +49,7 @@ def main():
 		
 	plt.xlabel("time [ms]")
 	plt.ylabel("volt [V]")
-
+	
 	#plt.savefig(f"{os.path.dirname(paths)}/double_plot.png")
 	plt.show()
 

@@ -120,8 +120,9 @@ def select_condition(df,select):
 	if "index" in select:
 		selectdata = loadIndex(select["index"])
 		df = df[df.index.isin(selectdata)]
-		print
+
 	else:
+		
 		for i in select:      
 			try:
 				param,sym = i.split('-')

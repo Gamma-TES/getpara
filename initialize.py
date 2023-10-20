@@ -101,7 +101,7 @@ def main():
 	'samples-=':setting_json['Config']['samples'],
 	'height->':setting_json['Config']['threshold'],
 	'rSquared->':0,
-	'quality!=':0
+	'error-!':0
 	}}
     #--------------------------------------------------------------------------
 
