@@ -296,80 +296,76 @@ def main():
         else:
             # Processing
             path = f'CH{ch}_pulse/rawdata/CH{ch}_{num}.dat'
-            try:
-                data = gp.loadbi(path,config["type"])
-                plt.show()
-                plt.cla()
-                base,data = gp.baseline(data,presamples,analysis['base_x'],analysis['base_w'])
-                mv = gp.moving_average(data,analysis['mv_w'])
-                dif  = gp.diff(mv)
-
-                if analysis['cutoff'] > 0:
-                    data = gp.BesselFilter(data,rate,analysis['cutoff'])
-
-                # Analysis
-                peak,peak_av,peak_index = gp.peak(data,presamples,analysis['peak_max'],analysis['peak_x'],analysis['peak_w'])
-                rise,rise_10,rise_90 = gp.risetime(data,peak_av,peak_index,rate)
-                decay,decay_10,decay_90 = gp.decaytime(data,peak_av,peak_index,rate)
-
-                # Console output
-                print('\n---------------------------')
-                print(path)
-                print(f'samples : {len(data)}')
-                print(f'base : {base:.5f}')
-                print(f'hight : {peak_av:.5f}')
-                print(f'peak index : {peak_index:.5f}')
-                print(f'rise : {rise:.5f}')
-                print(f'decay : {decay:.5f}')
-                
-                # Fitting
-                if fitting_mode:
-                    x_fit = np.arange(presamples-5,samples,0.1)
-                    popt,rSquared = gp.fitExp(gp.fit_func(analysis['fit_func']),data,presamples+analysis['fit_x'],analysis['fit_w'],p0 = analysis['fit_p0'])
-                    if analysis['fit_func'] == "monoExp":
-                        tau_rise = 0
-                        tau_decay = 1/popt[1]/rate
-                    if analysis['fit_func'] == "doubleExp":
-                        tau_rise = popt[1]/rate
-                        tau_decay = popt[3]/rate
-                    fit_func = gp.fit_func(analysis["fit_func"])
-                    fitting = fit_func(x_fit,*popt)
-
-                    print(f'tau_rise : {tau_rise:.5f}' )
-                    print(f'tau_decay : {tau_decay:.5f}' )
-                    print(f'rSqared: {rSquared:.5f}')
-
-
-                # Graugh
-                if analysis['cutoff'] > 0:
-                    plt.plot(time,data,'o',markersize=1,label=f"rawdata_ch{ch} data")
-                else:
-                    plt.plot(time,data,'o',markersize=1,label=f"rawdata_ch{ch}")
-                if fitting_mode:
-                    plt.plot(x_fit/rate,fitting,'-.',color="skyblue",label = 'fitting')
-                #plt.plot(time[:samples-set['main']['mv_w']+1],mv,label = "mv")
-                plt.plot(time[presamples-analysis['base_x']:presamples-analysis['base_x']+analysis['base_w']],data[presamples-analysis['base_x']:presamples-analysis['base_x']+analysis['base_w']],'-',linewidth=2,color="lightpink",label="base")
-                plt.plot(time[rise_10:rise_10],data[rise_10:rise_10],'-',color='royalblue',label="rise")
-                plt.scatter(time[rise_10],data[rise_10],color = 'royalblue',label='rise')
-                plt.scatter(time[rise_90],data[rise_90],color = 'royalblue')
-                plt.scatter(time[peak_index],peak_av, color='orange', label ='peak',zorder = 2)
-                plt.scatter(time[presamples],data[presamples], color='violet', label ='risepoint',zorder = 2)
             
-                plt.xlabel("time(s)")
-                plt.ylabel("volt(V)")
-                gp.graugh_condition(setting["graugh"])
-                plt.title(os.path.basename(path).replace('.dat',''))
-                plt.grid()
-                plt.legend()
-                plt.show()
-                plt.cla()
+            data = gp.loadbi(path,config["type"])
+            base,data = gp.baseline(data,presamples,analysis['base_x'],analysis['base_w'])
+            mv = gp.moving_average(data,analysis['mv_w'])
+            dif  = gp.diff(mv)
 
-                if setting['graugh']['diff']:
-                    gp.graugh('diff pulse',dif,time[:samples-analysis['mv_w']+1])
-                    plt.show()
-            except Exception as e:
-                print(e)
-    
+            if analysis['cutoff'] > 0:
+                data = gp.BesselFilter(data,rate,analysis['cutoff'])
+
+            # Analysis
+            peak,peak_av,peak_index = gp.peak(data,presamples,analysis['peak_max'],analysis['peak_x'],analysis['peak_w'])
+            rise,rise_10,rise_90 = gp.risetime(data,peak_av,peak_index,rate)
+            decay,decay_10,decay_90 = gp.decaytime(data,peak_av,peak_index,rate)
+
+            # Console output
+            print('\n---------------------------')
+            print(path)
+            print(f'samples : {len(data)}')
+            print(f'base : {base:.5f}')
+            print(f'hight : {peak_av:.5f}')
+            print(f'peak index : {peak_index:.5f}')
+            print(f'rise : {rise:.5f}')
+            print(f'decay : {decay:.5f}')
+            
+            # Fitting
+            if fitting_mode:
+                x_fit = np.arange(presamples-5,samples,0.1)
+                popt,rSquared = gp.fitExp(gp.fit_func(analysis['fit_func']),data,presamples+analysis['fit_x'],analysis['fit_w'],p0 = analysis['fit_p0'])
+                if analysis['fit_func'] == "monoExp":
+                    tau_rise = 0
+                    tau_decay = 1/popt[1]/rate
+                if analysis['fit_func'] == "doubleExp":
+                    tau_rise = popt[1]/rate
+                    tau_decay = popt[3]/rate
+                fit_func = gp.fit_func(analysis["fit_func"])
+                fitting = fit_func(x_fit,*popt)
+
+                print(f'tau_rise : {tau_rise:.5f}' )
+                print(f'tau_decay : {tau_decay:.5f}' )
+                print(f'rSqared: {rSquared:.5f}')
+
+
+            # Graugh
+            if analysis['cutoff'] > 0:
+                plt.plot(time,data,'o',markersize=1,label=f"rawdata_ch{ch} data")
+            else:
+                plt.plot(time,data,'o',markersize=1,label=f"rawdata_ch{ch}")
+            if fitting_mode:
+                plt.plot(x_fit/rate,fitting,'-.',color="skyblue",label = 'fitting')
+            #plt.plot(time[:samples-set['main']['mv_w']+1],mv,label = "mv")
+            plt.plot(time[presamples-analysis['base_x']:presamples-analysis['base_x']+analysis['base_w']],data[presamples-analysis['base_x']:presamples-analysis['base_x']+analysis['base_w']],'-',linewidth=2,color="lightpink",label="base")
+            plt.plot(time[rise_10:rise_10],data[rise_10:rise_10],'-',color='royalblue',label="rise")
+            plt.scatter(time[rise_10],data[rise_10],color = 'royalblue',label='rise')
+            plt.scatter(time[rise_90],data[rise_90],color = 'royalblue')
+            plt.scatter(time[peak_index],peak_av, color='orange', label ='peak',zorder = 2)
+            plt.scatter(time[presamples],data[presamples], color='violet', label ='risepoint',zorder = 2)
+        
+            plt.xlabel("time(s)")
+            plt.ylabel("volt(V)")
+            gp.graugh_condition(setting["graugh"])
+            plt.title(os.path.basename(path).replace('.dat',''))
+            plt.grid()
+            plt.legend()
+            plt.show()
+            plt.cla()
+
+            if setting['graugh']['diff']:
+                gp.graugh('diff pulse',dif,time[:samples-analysis['mv_w']+1])
+                plt.show()
+            
     gp.saveJson(setting,path=output)
 
 if __name__ == "__main__":

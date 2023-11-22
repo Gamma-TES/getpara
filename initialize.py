@@ -67,10 +67,10 @@ def main():
             "Config":{
                 "path" : path,
                 "channel":0,
-                "rate" : int(setting[2]),
-                "samples" : int(setting[4]),
-                "presamples" : int(setting[5]),
-                "threshold" : setting[6],
+                "rate" : int(setting[0]),
+                "samples" : int(setting[2]),
+                "presamples" : int(setting[3]),
+                "threshold" : setting[4],
                 "output" : output,
                 "type": 'binary'
             }}
