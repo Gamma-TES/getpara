@@ -8,15 +8,15 @@ import numpy as np
 import scipy.optimize as opt
 import matplotlib.pyplot as plt
 from scipy import optimize
-import sys
-import glob
+from scipy.optimize import curve_fit
+
 
 #-------------変更するparameters---------------------------------
 
 RN_s = 0		#fittng時のパラメータの取り得る範囲。常伝導抵抗値RN[mohm],転移温度Tc[mK],T1[mK],T2[mK]
 RN_f = 'inf'					#例えば、パラメタRNを0[mohm]以上で動かしたい場合は、RN_s = 0.0,RN_f = 'inf'。
-Tc_s = 100
-Tc_f = 130			#T1、T2についても同様。
+Tc_s = 0
+Tc_f = 'inf'			#T1、T2についても同様。
 T1_s = 0.0					#注意として、全てのパラメタで下限は0.0である。
 T1_f = 'inf'				#また、計算量を減らすために、RN、T_cについては、目星をつけた値にすることを推奨する。
 T2_s = 0.0					#さらに、Tcについては下のList of Hot Bathの最大値と最小値の範囲内におさめること。
@@ -51,14 +51,17 @@ def fit_func(para,x,y):                  #fit関数の定義。paraはパラメ�
 		RN_func = np.exp(RN)+RN_s
 	else:
 		RN_func = ((RN_f-RN_s)/math.pi)*math.atan(RN)+(RN_f+RN_s)/2
+
 	if Tc_f == 'inf':
 		Tc_func = np.exp(Tc)+ Tc_s
 	else:
 		Tc_func = ((Tc_f-Tc_s)/math.pi)*math.atan(Tc)+(Tc_f+Tc_s)/2
+
 	if T1_f =='inf':
 		T1_func = np.exp(T1)+T1_s
 	else:
 		T1_func = ((T1_f-T1_s)/math.pi)*math.atan(T1)+(T1_f+T1_s)/2
+
 	if T2_f =='inf':
 		T2_func = np.exp(T2)+T2_s
 	else:
@@ -67,7 +70,7 @@ def fit_func(para,x,y):                  #fit関数の定義。paraはパラメ�
 	residual = y - (RN_func/((1+np.exp(-(x-Tc_func)/T1_func))*(1+np.exp(-(x-Tc_func)/T2_func))))
 	return(residual)
 
-result_1 = opt.leastsq(fit_func,para0,args = (T,R_1))
+result_1 = opt.leastsq(fit_func,para0,args = (T,R_1),)
 result_2 = opt.leastsq(fit_func,para0,args = (T,R_2))
 
 RN_fit_1 = result_1[0][0]
