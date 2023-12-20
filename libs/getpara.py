@@ -286,6 +286,13 @@ def FWHW(sigma):
     return 2 * sigma * (2 * np.log(2)) ** (1 / 2)
 
 
+def multi_func(X, *params):
+    Y = np.zeros_like(X)
+    for i, param in enumerate(params):
+        Y = Y + np.array(param * X**i)
+    return Y
+
+
 def fit_func(func):
     if func == "monoExp":
         return monoExp
