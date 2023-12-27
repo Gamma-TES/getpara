@@ -18,7 +18,7 @@ test_data = "E:/matsumi/data/20230512/room2-2_140mK_870uA_gain10_trig0.4_500kHz/
 e = 2.718
 
 decay_high = 0.90
-decay_low = 0.60
+decay_low = 0.80
 
 rise_high = 0.90
 rise_low = 0.10
