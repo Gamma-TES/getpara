@@ -43,6 +43,7 @@ def main():
                 data = gp.BesselFilter(data, rate, set["main"]["cutoff"])
             peak = np.max(data_ba)
             if (base <= -3 and base >= 3) or peak >= float(set["Config"]["threshold"]):
+                print("error")
                 continue
             else:
                 data_fft = np.fft.fft(data)
@@ -57,8 +58,8 @@ def main():
     power = model**2 / df
     amp_dens = np.sqrt(power)
     amp_dens = amp_dens[: int(samples / 2) + 1] * eta * 1e+6
-
-    np.savetxt(f"{output}/modelnoise.txt", model)
+    print(amp_dens)
+    np.savetxt(f"{output}/modelnoise.txt", amp_dens)
 
     # スペクトルをグラフ化
     plt.plot(fq[: int(samples / 2) + 1], amp_dens, linestyle="-", linewidth=0.7)

@@ -12,6 +12,7 @@ import os
 import re
 import json
 import warnings
+import plt_config
 
 test_data = "E:/matsumi/data/20230512/room2-2_140mK_870uA_gain10_trig0.4_500kHz/CH0_pulse/rawdata/CH0_4833.dat"
 
@@ -220,12 +221,8 @@ def decaytime(data, peak, peak_index, rate):
     return decay, decay_10, decay_90
 
 
-# シリコンイベント弁別
-def silicon_event(decay_ab, decay_sil):
-    if decay_ab < decay_sil:
-        return "silicon"
-    else:
-        return "absorb"
+def area(data, peak_index, x, w):
+    return np.sum(data[peak_index - x : peak_index - x + w])
 
 
 # LP Filter

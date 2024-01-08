@@ -170,15 +170,16 @@ def main():
                 peak,peak_av,peak_index = gp.peak(data,presamples,analysis['peak_max'],analysis['peak_x'],analysis['peak_w'])
                 rise,rise_10,rise_90 = gp.risetime(data,peak_av,peak_index,rate)
                 decay,decay_10,decay_90 = gp.decaytime(data,peak_av,peak_index,rate)
+                area = gp.area(data,peak_index,analysis['area_x'],analysis['area_w'])
                 
                 # if fitting data, array has more parameter
                 if fitting_mode:
-                    data_column = [samples,base,peak_av,peak_index,rise,decay,trig,tau_rise,tau_decay,rSquared]
+                    data_column = [samples,base,peak_av,peak_index,rise,decay,area,trig,tau_rise,tau_decay,rSquared]
                 else:
-                    data_column = [samples,base,peak_av,peak_index,rise,decay,trig]
+                    data_column = [samples,base,peak_av,peak_index,rise,decay,area,trig]
                 data_array.append(data_column)
-            except:
-                print('error')
+            except Exception as e:
+                print(e)
                 num_data.remove(num)
                 continue
             
@@ -186,12 +187,12 @@ def main():
         # create pandas DataFrame
         if fitting_mode:
             df = pd.DataFrame(data_array,\
-                    columns=["samples","base","height","peak_index","rise","decay","trig",'tau_rise','tau_decay',"rSquared"],\
+                    columns=["samples","base","height","peak_index","rise","decay","area","trig",'tau_rise','tau_decay',"rSquared"],\
                     index=num_data)
 
         else:
             df = pd.DataFrame(data_array,\
-                    columns=["samples","base","height","peak_index","rise","decay","trig"],\
+                    columns=["samples","base","height","peak_index","rise","decay","area","trig"],\
                     index=num_data)
 
         # output
@@ -235,6 +236,7 @@ def main():
                     peak,peak_av,peak_index = gp.peak(data,presamples,analysis['peak_max'],analysis['peak_x'],analysis['peak_w'])
                     rise,rise_10,rise_90 = gp.risetime(data,peak_av,peak_index,rate)
                     decay,decay_10,decay_90 = gp.decaytime(data,peak_av,peak_index,rate)
+                    area = gp.area(data,peak_index,analysis['area_x'],analysis['area_w'])
 
                     print('\n---------------------------')
                     print(path)
@@ -244,6 +246,7 @@ def main():
                     print(f'peak index : {peak_index:.5f}')
                     print(f'rise : {rise:.5f}')
                     print(f'decay : {decay:.5f}')
+                    print(f'area : {area:.5f}')
 
                     if fitting_mode:
                         x_fit = np.arange(presamples-5,samples,0.1)
@@ -275,8 +278,7 @@ def main():
                     plt.scatter(time[rise_90],data[rise_90],color = 'blue')
                     plt.scatter(time[peak_index],peak_av, color='cyan', label ='peak',zorder = 2)
                     plt.scatter(time[presamples],data[presamples], color='magenta', label ='risepoint',zorder = 2)
-                    plt.legend()
-
+                #plt.legend()
                 gp.graugh_condition(setting["graugh"])
                 plt.xlabel("time(s)")
                 plt.ylabel("volt(V)")
@@ -309,6 +311,7 @@ def main():
             peak,peak_av,peak_index = gp.peak(data,presamples,analysis['peak_max'],analysis['peak_x'],analysis['peak_w'])
             rise,rise_10,rise_90 = gp.risetime(data,peak_av,peak_index,rate)
             decay,decay_10,decay_90 = gp.decaytime(data,peak_av,peak_index,rate)
+            area = gp.area(data,peak_index,analysis['area_x'],analysis['area_w'])
 
             # Console output
             print('\n---------------------------')
@@ -319,6 +322,8 @@ def main():
             print(f'peak index : {peak_index:.5f}')
             print(f'rise : {rise:.5f}')
             print(f'decay : {decay:.5f}')
+            print(f'area : {area:.5f}')
+
             
             # Fitting
             if fitting_mode:
@@ -347,7 +352,6 @@ def main():
                 plt.plot(x_fit/rate,fitting,'-.',color="skyblue",label = 'fitting')
             #plt.plot(time[:samples-set['main']['mv_w']+1],mv,label = "mv")
             plt.plot(time[presamples-analysis['base_x']:presamples-analysis['base_x']+analysis['base_w']],data[presamples-analysis['base_x']:presamples-analysis['base_x']+analysis['base_w']],'-',linewidth=2,color="lightpink",label="base")
-            plt.plot(time[rise_10:rise_10],data[rise_10:rise_10],'-',color='royalblue',label="rise")
             plt.scatter(time[rise_10],data[rise_10],color = 'royalblue',label='rise')
             plt.scatter(time[rise_90],data[rise_90],color = 'royalblue')
             plt.scatter(time[peak_index],peak_av, color='orange', label ='peak',zorder = 2)
@@ -358,7 +362,8 @@ def main():
             gp.graugh_condition(setting["graugh"])
             plt.title(os.path.basename(path).replace('.dat',''))
             plt.grid()
-            plt.legend()
+            plt.legend(fontsize=10)
+            plt.tight_layout()
             plt.show()
             plt.cla()
 

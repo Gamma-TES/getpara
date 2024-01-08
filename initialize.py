@@ -19,6 +19,8 @@ main_para = {"main": {
         "peak_max": 300,
         "peak_x": 3,
         "peak_w": 10,
+        "area_x":5000,
+        "area_w":50000,
         "fit_func": "monoExp",
         "fit_x": 5000,
         "fit_w": 50000,
@@ -67,10 +69,10 @@ def main():
             "Config":{
                 "path" : path,
                 "channel":0,
-                "rate" : int(setting[0]),
-                "samples" : int(setting[2]),
-                "presamples" : int(setting[3]),
-                "threshold" : setting[4],
+                "rate" : int(setting[2]),
+                "samples" : int(setting[4]),
+                "presamples" : int(setting[5]),
+                "threshold" : setting[6],
                 "output" : output,
                 "type": 'binary'
             }}

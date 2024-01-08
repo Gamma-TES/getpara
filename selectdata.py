@@ -13,6 +13,7 @@ import tkinter as tk
 from tkinter import filedialog
 import tqdm
 import platform
+import plt_config
 
 # main.py　の後　output.csv　を用いてパラメータの相関をみる
 # 
@@ -36,6 +37,7 @@ ax_unit = {
 	"height_opt_temp":'pulse height opt temp',
 	'rise':'rise[s]',
 	'decay':'decay[s]',
+	'area':'area',
 	'rise_fit':'rise_fit[s]',
 	'tau_rise':'tau_rise[s]',
 	'tau_decay':'tau_decay[s]',
@@ -95,6 +97,7 @@ def main():
 		plt.ylabel(ax_unit[ax[1]])
 		plt.title(f"{ax[0]} vs {ax[1]}")
 		plt.grid()
+		plt.tight_layout()
 		plt.savefig(f'{output}/{ax[0]} vs {ax[1]}.png')
 		plt.show()
 		plt.cla()
