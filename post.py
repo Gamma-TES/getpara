@@ -1,9 +1,9 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-import libs.plt_config
+import plt_config
 import os
-import libs.getpara as gp
+import getpara as gp
 import sys
 import shutil
 import pprint
@@ -15,15 +15,6 @@ import tkinter as tk
 import tqdm
 
 
-def overlap(df_0, df_1):
-	# index_0,index_1 = df_0.index.values,df_1.index.values
-	##ch1 = re.findall(r'\d+', index_1[0])[0]
-	# num_0 = [re.findall(r'\d+', i)[2] for i in index_0]
-	# num_1 = [re.findall(r'\d+', i)[2] for i in index_1]
-	df_comp_0 = df_0[df_0.index.isin(df_1.index)]
-	df_comp_1 = df_1[df_1.index.isin(df_0.index)]
-
-	return df_comp_0, df_comp_1
 
 
 def df_number(df):
@@ -63,7 +54,7 @@ def main():
 	df_0_clear = gp.select_condition(df_0, setting["select"])
 	df_1_clear = gp.select_condition(df_1, setting["select"])
 
-	df_0_over, df_1_over = overlap(df_0_clear, df_1_clear)
+	df_0_over, df_1_over = gp.overlap(df_0_clear, df_1_clear)
 	x, y = df_0_over[para], df_1_over[para]
 
 	plt.scatter(x, y, s=0.4)
@@ -84,12 +75,8 @@ def main():
 
 	# create output dir
 	output_select = f"{output_0}/{output_select}"
-	for ch in [ch0, ch1]:
-		if not os.path.exists(f"{output_select}/CH{ch}/img"):
-			os.makedirs(f"{output_select}/CH{ch}/img", exist_ok=True)
-		else:
-			shutil.rmtree(f"{output_select}/CH{ch}/img")
-			os.mkdir(f"{output_select}/CH{ch}/img")
+	os.makedirs(f"{output_select}", exist_ok=True)
+	
 
 	# pick samples from graugh
 
@@ -114,6 +101,13 @@ def main():
 	if a != '0':
 		print("exit")
 		exit()
+
+	for ch in [ch0, ch1]:
+		if not os.path.exists(f"{output_select}/CH{ch}/img"):
+			os.makedirs(f"{output_select}/CH{ch}/img", exist_ok=True)
+		else:
+			shutil.rmtree(f"{output_select}/CH{ch}/img")
+			os.mkdir(f"{output_select}/CH{ch}/img")
 		
 	for ch in [ch0, ch1]:
 		# ----- create onetime pulse ---------------------------------------

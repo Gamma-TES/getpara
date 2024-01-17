@@ -28,9 +28,14 @@ def func(x,a,b):
     return a * x + b
 
 def main():
+
+    if not os.path.exists('calibration'):
+        os.mkdir('calibration')
+
     path = input('path: ')
     os.chdir(path)
     temp = input('temperature [mK]: ')
+
 
     files = natsorted(glob.glob(f"{temp}mK/*.dat"))
     I_bias = [] 
@@ -116,15 +121,15 @@ def main():
     R_tes =  np.append(0.0,R_tes)
     
 
-    IV = [I_bias,V_out]
-    np.savetxt(f"output/IV_{temp}_calibration.txt",IV)
+    IVR = [I_bias,V_out,R_tes]
+    np.savetxt(f"calibration/IV_{temp}.txt",IVR)
 
     plt.plot(I_bias,V_out,marker = "o",c = "red",linewidth = 1,markersize = 6)
     plt.title(f'I-V at {temp}')
     plt.xlabel("I_bias[uA]")
     plt.ylabel("V_out[V]")
     plt.grid(True)
-    plt.savefig(f"output/IV_{temp}_calibration.png")
+    plt.savefig(f"calibration/IV_{temp}.pdf")
     plt.show()
 
     # I-R graugh
@@ -133,7 +138,7 @@ def main():
     plt.xlabel("I_bias[uA]",fontsize = 16)
     plt.ylabel("R_tes[$\Omega$]",fontsize = 16)
     plt.grid(True)
-    plt.savefig(f"output/IR_{temp}.png")
+    plt.savefig(f"calibration/IR_{temp}.pdf")
     plt.cla()
 
 

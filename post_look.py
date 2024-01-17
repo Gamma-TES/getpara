@@ -54,13 +54,15 @@ def main():
 	df_0_clear = gp.select_condition(df_0,setting["select"])
 	df_1_clear = gp.select_condition(df_1,setting["select"])
 
+
 	df_0_over,df_1_over = overlap(df_0_clear,df_1_clear)
+	print(df_0_clear)
 	x,y = df_0_over[para],df_1_over[para]
 
 	fle = filedialog.askopenfilename()
 
 	selected = gp.loadIndex(fle)
-	x_sel,y_sel = df_0_over.loc[selected][para],df_1_over.loc[selected][para]
+	x_sel,y_sel = df_0_over[df_0_over.index.isin(selected)][para],df_1_over[df_1_over.index.isin(selected)][para]
 
 	plt.scatter(x,y,s=2,alpha=0.7)
 	plt.scatter(x_sel,y_sel,s=4)

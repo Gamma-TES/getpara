@@ -11,8 +11,11 @@ import libs.fft_spectrum as sp
 import json
 import warnings
 
-path = 'E:/matsumi/data/20230512/room2-2_140mK_870uA_gain10_trig0.4_500kHz/CH0_pulse/output/select'
-rawdata = 'average_pulse.txt'
+setting = gp.loadJson()
+path = setting['Config']['path']
+ch = setting['Config']['channel']
+number = input('num: ')
+rawdata = f'{path}/CH{ch}_pulse/rawdata/CH{ch}_{number}.dat'
 rate = int(1e6)
 samples = int(1e5)
 presamples = int(10000)
@@ -63,8 +66,8 @@ def doubleExp(x,m,t1,b1,t2,b2):
 
 def main():
     os.chdir(path) 
-    #data = gp.loadbi(rawdata)
-    data = np.loadtxt(rawdata)
+    data = gp.loadbi(rawdata,setting['Config']['type'])
+    #data = np.loadtxt(rawdata)
         
     base,data = gp.baseline(data,presamples,x_ba,w_ba)
     #data_txt = np.savetxt('CH0_242.txt',data)
@@ -78,7 +81,7 @@ def main():
     # rise
     x_rise = np.arange(presamples+start_rise,presamples+start_rise+width_rise)
     data_rise = data[presamples+start_rise:presamples+start_rise+width_rise]
-    params,cov = curve_fit(monoExp_rise,x_rise,data_rise,p0=[-2,12,presamples,peak_av],maxfev=500000)
+    params,cov = curve_fit(monoExp_rise,x_rise,data_rise,p0=[-2,12,presamples,peak_av],maxfev=100000)
     fit_rise = monoExp_rise(x_fit,*params)
     print(f"rise:{params}")
     
@@ -116,15 +119,15 @@ def main():
 
 
     # rise time
-    rise,rise_10,rise_90 = gp.risetime(data,peak_av,peak_index,rate)
-    rise_fit = gp.risetime(fit_double,np.max(fit_double),np.argmax(fit_double),rate)
+    rise,rise_10,rise_90 = gp.risetime(data,peak_av,peak_index,setting['main']['rise_high'],setting['main']['rise_low'],rate)
+    rise_fit = gp.risetime(fit_double,np.max(fit_double),np.argmax(fit_double),setting['main']['rise_high'],setting['main']['rise_low'],rate)
     print(f'rise time (rawdata): {rise}')
     print(f'rise time (fitting): {rise_fit[0]}')
 
     
 
 
-    plt.plot(time,data,'o',markersize=2,label = rawdata)
+    plt.plot(time,data,'o',markersize=2,label = os.path.basename(rawdata))
     #plt.plot(x_fit_time,fit_rise,'-.',label = "rise fit")
     #plt.plot(x_fit_time,fit_decay,'-.',label = "decay fit")
     #plt.plot(x_fit_time,fit_sum,'--',label='sum fit ',c = 'purple')

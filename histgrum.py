@@ -8,7 +8,7 @@ import pandas as pd
 import libs.getpara as gp
 import json
 
-BIN = 4096
+BIN = 80
 
 def main():
 
@@ -27,9 +27,11 @@ def main():
 
 	# Load data and transform histgrum
 	df = pd.read_csv((f'{output}/output.csv'),index_col=0)
-	df_sel = gp.select_condition(df,set)
+	df_sel = gp.select_condition(df,set['select'])
+	print(df_sel)
 	data = df_sel[para]
 	hist,bins = np.histogram(data,bins=BIN)
+	
 
 	plt.bar(bins[:-1],hist,width = bins[1]-bins[0])
 	plt.xlabel('Pulse Height [ch]')
@@ -40,6 +42,8 @@ def main():
 	plt.grid(True, which='minor', color='black', linestyle=':', linewidth=0.1)
 	plt.savefig(f'{output}/{set["select"]["output"]}/histgrum.png')
 	plt.show()
+
+	
 
 
 if __name__ == "__main__":

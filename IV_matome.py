@@ -22,14 +22,13 @@ def func(x, a, b):
 
 
 def main():
+    ax = sys.argv
     path = input("path: ")
-    calib = input("calibration?[1] ")
     os.chdir(path)
 
-    if calib == "1":
-        files = natsorted(glob.glob("output/*.txt"))
-    else:
-        files = natsorted(glob.glob("rawdata/*.txt"))
+        
+    files = natsorted(glob.glob("calibration/IV_*.txt"))
+    
     print(files)
     I_bias = []
     V_out = []
@@ -53,9 +52,10 @@ def main():
     plt.title(f"I-V ")
     plt.xlabel("I_bias[uA]")
     plt.ylabel("V_out[V]")
-    plt.legend()
+    plt.legend(fontsize=12)
     plt.grid(True)
-    plt.savefig(f"output/IV_calibration.png")
+    plt.tight_layout()
+    plt.savefig(f"calibration/IV.pdf")
     plt.show()
 
     cnt = 0
@@ -66,8 +66,9 @@ def main():
         V_out = data[1]
 
         popt, cov = curve_fit(func, I_bias[:10], V_out[:10])
-        eta = 1 / popt[0]
-
+        if cnt == 0:
+            eta = 1 / popt[0]
+        print(eta)
         I_tes = eta * V_out
         I_sh = I_bias - I_tes
         V_tes = I_sh * R_SH
@@ -88,9 +89,10 @@ def main():
     plt.title(f"I-R ")
     plt.xlabel("I_bias[uA]")
     plt.ylabel("R_tes[m$\Omega$]")
-    plt.legend()
+    plt.legend(fontsize=12)
     plt.grid(True)
-    plt.savefig(f"output/IR_calibration.png")
+    plt.tight_layout()
+    plt.savefig(f"output/IR_calibration.pdf")
     plt.show()
 
     """

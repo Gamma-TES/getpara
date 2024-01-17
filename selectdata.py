@@ -41,6 +41,7 @@ ax_unit = {
 	'rise_fit':'rise_fit[s]',
 	'tau_rise':'tau_rise[s]',
 	'tau_decay':'tau_decay[s]',
+	'height_fit':'height_fit[V]',
 	'rSquared':'rSquared'
 }
 
@@ -124,11 +125,11 @@ def main():
 		x,y = gp.extruct(df_clear,*ax)
 		picked = gp.pickSamples(df_clear,x,y)
 		print(f"Selected {len((picked))} samples.")
-
+		np.savetxt(f"{output_select}/selected_index.txt", picked, fmt="%s")
 
 		# graugh picked samples
 		x_sel,y_sel =gp.extruct(df_clear.loc[picked],*ax)
-		plt.scatter(x,y,s=2,alpha=0.7)
+		plt.scatter(x,y,s=2,alpha=0.5)
 		plt.scatter(x_sel,y_sel,s=4)
 		plt.xlabel(ax_unit[ax[0]])
 		plt.ylabel(ax_unit[ax[1]])
@@ -137,6 +138,12 @@ def main():
 		plt.savefig(f'{output_select}/{ax[0]}_{ax[1]}_selected.png')
 		plt.show()
 		plt.cla()
+
+		a = input("image write?[0]")
+	
+		if a != '0':
+			print("exit")
+			exit()
 
 		# one sumple
 		if len(picked) == 1:
@@ -165,10 +172,10 @@ def main():
 					data = gp.BesselFilter(data,rate,fs = analysis['cutoff'])
 
 				# save onetime rawdata figures
-				plt.plot(time,data)
+				plt.plot(time*1e3,data)
 				gp.graugh_condition(setting["graugh"])
 				plt.title(f'CH{ch} {num}')
-				plt.xlabel("time(s)")
+				plt.xlabel("time(ms)")
 				plt.ylabel("volt(V)")
 				plt.savefig(f'{output_select}/img/{num}.png')
 				plt.cla()
@@ -205,9 +212,9 @@ def main():
 			av = np.mean(array,axis=0)
 
 			# plot averate pulse
-			plt.plot(time,av)
+			plt.plot(time*1e3,av)
 			gp.graugh_condition(setting["graugh"])
-			plt.xlabel("time(s)")
+			plt.xlabel("time(ms)")
 			plt.ylabel("volt(V)")
 			plt.title("average pulse")
 			plt.savefig(f'{output_select}/average_pulse.png')
@@ -215,8 +222,8 @@ def main():
 
 			# log scale
 			plt.cla()
-			plt.plot(time,av)
-			plt.xlabel("time(s)")
+			plt.plot(time*1e3,av)
+			plt.xlabel("time(ms)")
 			plt.ylabel("volt(V)")
 			plt.title("average pulse")
 			plt.yscale('log')

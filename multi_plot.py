@@ -49,7 +49,8 @@ def main():
 		
 	plt.xlabel("time [ms]")
 	plt.ylabel("volt [V]")
-	
+	plt.tight_layout()
+	plt.grid()
 	#plt.savefig(f"{os.path.dirname(paths)}/double_plot.png")
 	plt.show()
 

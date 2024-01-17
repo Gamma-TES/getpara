@@ -7,12 +7,12 @@ import os
 import tqdm
 import glob
 import plt_config
+import sys
 
 # parameter 
-para = "height" 
 n_blocks = 11
 a_ini = 1.5 	# y = ax + 1
-resolution = 0.00001	# a decrement
+resolution = 0.000001	# a decrement
 
 
 # liner function
@@ -21,6 +21,13 @@ def func(x,a):
 
 
 def main():
+	ax = sys.argv
+	ax.pop(0)
+	if len(ax) != 1:
+		print("add parameter you want to see as histgrum!")
+		sys.exit()
+	para = ax[0]
+
 
 	setting = gp.loadJson()
 	
@@ -40,11 +47,11 @@ def main():
 	
 	df_0 = gp.select_condition(df_0,select=select)
 	df_1 = gp.select_condition(df_1,select=select)
-
+	
 	df_0_lap,df_1_lap = gp.overlap(df_0,df_1)
 
 
-	n_block = n_blocks
+	n_block = int(input("block: ")) 
 	length = len(df_0_lap)
 	block = int(length/n_block)
 
@@ -61,10 +68,14 @@ def main():
 	x_line = np.arange(0,df_0_lap[para].max()*1.1,0.001)
 
 	y_line_down = func(x_line,a)
+	plt.scatter(df_0_lap[para],df_1_lap[para],s=2)
+	plt.plot(x_line,y_line_down,"--",linewidth=0.5,markersize=0.7,color="black",alpha=0.7)
+	plt.show()
+	plt.cla()
 	plt.plot(x_line,y_line_down,"--",linewidth=0.5,markersize=0.7,color="black",alpha=0.7)
 
 
-	n = 0
+	n = n_blocks
 
 	# decrease a per resolution and sepalate blocks
 	for i in tqdm.tqdm(a_array):
@@ -76,10 +87,9 @@ def main():
 
 		span = list(set(idx_up) & set(idx_down))
 		indexs = df_0_lap.iloc[span].index
-
-		if len(indexs)==block:
+		if len(indexs)>=block:
 			a = i - resolution
-			n += 1
+			n -= 1
 
 			y_line_down = func(x_line,a)
 			np.savetxt(f"CH{ch}_pulse/output/{config['output']}/blocks/block_{n}.txt",indexs)
@@ -87,19 +97,25 @@ def main():
 			df_sel_0,df_sel_1 = df_0_lap.loc[indexs],df_1_lap.loc[indexs]
 			x,y = df_sel_0[para],df_sel_1[para]
 			plt.scatter(x,y,s=2,color = cm.hsv((float(n))/float(n_block)))
+			'''
+			if n==1:
+				plt.scatter(x,y,s=2,color = "tab:red")
+			else:
+				plt.scatter(x,y,s=2,color = "0.5")
+				'''
+
 			plt.plot(x_line,y_line_down,"--",linewidth=0.5,markersize=0.7,color="black",alpha=0.7)
+			
 
 			df_0_lap.drop(indexs, inplace = True)
 			df_1_lap.drop(indexs, inplace = True)
 		
-		if n == n_block:
+		if n == 0:
 			break
 
 	plt.grid()
 	plt.xlabel(f"Pulse Height (CH0) [V]")
 	plt.ylabel(f"Pulse Height (CH1) [V]")
-	plt.xlim(0,df_0[para].max()*1.1)
-	plt.ylim(0,df_1[para].max()*1.1)
 	plt.tight_layout()
 	plt.savefig(f"CH{ch}_pulse/output/{config['output']}/blocks/blocks.png")
 	plt.show()

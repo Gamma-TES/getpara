@@ -16,9 +16,13 @@ import re
 main_para = {"main": {
         "base_x": 1000,
         "base_w": 500,
-        "peak_max": 300,
+        "peak_max": 1000,
         "peak_x": 3,
         "peak_w": 10,
+        "rise_high" : 0.90,
+        "rise_low" : 0.10,
+        "decay_high" : 0.90,
+        "decay_low" :0.10,
         "area_x":1000,
         "area_w":5000,
         "fit_func": "monoExp",
@@ -28,7 +32,7 @@ main_para = {"main": {
             0.1,
             1e-05
         ],
-        "mv_w": 100,
+        "mv_w": 0,
         "cutoff": 0.0
     }
 }
@@ -40,6 +44,10 @@ main2_para = {"main2": {
         "peak_max": 4000,
         "peak_x": 100,
         "peak_w": 500,
+        "rise_high" : 0.90,
+        "rise_low" : 0.10,
+        "decay_high" : 0.90,
+        "decay_low" :0.10,
         "area_x":1000,
         "area_w":5000,
         "fit_func": "monoExp",
@@ -49,7 +57,7 @@ main2_para = {"main2": {
             0.1,
             1e-05
         ],
-        "mv_w": 100,
+        "mv_w": 0,
         "cutoff": 0.0
     }
 }

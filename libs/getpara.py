@@ -12,17 +12,12 @@ import os
 import re
 import json
 import warnings
+import math
 import plt_config
 
 test_data = "E:/matsumi/data/20230512/room2-2_140mK_870uA_gain10_trig0.4_500kHz/CH0_pulse/rawdata/CH0_4833.dat"
 
 e = 2.718
-
-decay_high = 0.90
-decay_low = 0.80
-
-rise_high = 0.90
-rise_low = 0.10
 # ---解析プログラム作成------------------------------------------------------------
 
 # --- Initialize ------------------------------------------------
@@ -123,6 +118,7 @@ def loadPHITS(path, start, end, column):
 
 def select_condition(df, select):
 	if "index" in select:
+		
 		selectdata = loadIndex(select["index"])
 		df = df[df.index.isin(selectdata)]
 
@@ -182,7 +178,7 @@ def integrate(data):
 
 
 # ライズタイム
-def risetime(data, peak, peak_index, rate):
+def risetime(data, peak, peak_index, rise_high,rise_low,rate):
 	rise_90 = 0
 	rise_10 = 0
 
@@ -203,7 +199,7 @@ def risetime(data, peak, peak_index, rate):
 
 
 # ディケイタイム
-def decaytime(data, peak, peak_index, rate):
+def decaytime(data, peak, peak_index, decay_high,decay_low,rate):
 	decay_90 = 0
 	decay_10 = 0
 	for i in range(peak_index, len(data)):
@@ -245,6 +241,22 @@ def diff(data):
 	return np.gradient(data)
 
 
+def valid_convolve(xx, size):
+    b = np.ones(size)/size
+    xx_mean = np.convolve(xx, b, mode="same")
+
+    n_conv = math.ceil(size/2)
+
+    # 補正部分
+    xx_mean[0] *= size/n_conv
+    for i in range(1, n_conv):
+        xx_mean[i] *= size/(i+n_conv)
+        xx_mean[-i] *= size/(i + n_conv - (size % 2)) 
+	# size%2は奇数偶数での違いに対応するため
+
+    return xx_mean
+
+
 # フィルター処理
 def filter(data, rate, samples):
 	fq = np.arange(0, rate, rate / samples)
@@ -283,6 +295,16 @@ def FWHW(sigma):
 	return 2 * sigma * (2 * np.log(2)) ** (1 / 2)
 
 
+# ---------- Fitting ---------------------------------------------------
+
+# fitting parameter sample
+#start = 0      # presamples + start
+#width = 1000  #  start + width
+#p0_2 = [-1.6,12,presamples,5570,presamples]
+#p0_3 = [-1.6,12,presamples,5570,presamples,5000,presamples]
+#p0_4 = [-1.6,12,presamples,5570,presamples,5000,presamples,5000,presamples]
+#p0_5 = [-1.6,12,presamples,5570,presamples,12,presamples,12,presamples]
+
 def multi_func(X, *params):
 	Y = np.zeros_like(X)
 	for i, param in enumerate(params):
@@ -295,6 +317,12 @@ def fit_func(func):
 		return monoExp
 	elif func == "doubleExp":
 		return doubleExp
+	elif func == "tripleExp":
+		return tripleExp
+	elif func == "forthExp":
+		return forthExp
+	elif func == "forthExp2":
+		return forthExp2
 
 
 # フィッティング
@@ -322,6 +350,14 @@ def forthExp(x, m, t1, b1, t2, b2, t3, b3, t4, b4):
 		- np.exp(-(x - b4) / t4)
 	)
 
+def forthExp2(x, m, t1, b1, b2, t3, b3, t4, b4,t5, b5):
+	return m * (
+		np.exp(-(x - b1) / t1)
+		- np.exp(-(x - b3) / t3)
+		- np.exp(-(x - b4) / t4)
+		- np.exp(-(x - b5) / t5)
+	) + np.exp((x - b2))
+
 
 def fitExp(func, data, start, width, p0):
 	warnings.simplefilter("ignore")
@@ -346,19 +382,8 @@ def rSquared(y,y_fit):
 	squaredDiffsFromMean = np.square(y - np.mean(y))
 	rSquared = 1 - np.sum(squaredDiffs) / np.sum(squaredDiffsFromMean)
 	return rSquared
-	
 
-def siliconEvent(data, peak_index, rate):
-	cnt = 0
-	for i in data[peak_index:]:
-		cnt += 1
-		if data[peak_index] * rate > i:
-			break
-
-	return cnt
-
-
-# ----------------------------------------------------------
+# ---------------------------------------------------------------------------
 
 
 def search_peak(hist):

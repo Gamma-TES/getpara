@@ -25,10 +25,10 @@ def main():
 	ch = config["channel"]
 	presamples = config["presamples"]
 	time = gp.data_time(config['rate'],config['samples'])
-	output = f'CH{0}_pulse/output/{config["output"]}/block'
+	output = f'CH{ch}_pulse/output/{config["output"]}/blocks'
 	os.chdir(config["path"])
 
-	blocks_path = glob.glob(f"CH{0}_pulse/output/{config['output']}/block/block_*.txt")
+	blocks_path = glob.glob(f"CH{ch}_pulse/output/{config['output']}/blocks/block_*.txt")
 
 	
 	

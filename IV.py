@@ -28,18 +28,17 @@ def func(x,a,b):
 
 
 def main():
-    ax = sys.argv
-    ax.pop(0)
+
     
     path = input('path: ')
     os.chdir(path)
 
 
-    if not os.path.exists('output'):
-        os.mkdir('output')
+    if not os.path.exists('calibration'):
+        os.mkdir('calibration')
     if not os.path.exists('rawdata'):
         os.mkdir('rawdata')
-    
+
 
     temps = natsorted(glob.glob("*mK"))
     print(temps)
@@ -62,8 +61,9 @@ def main():
 
         # Fitting and get eta
         popt, cov = curve_fit(func,I_bias[:10],V_out[:10])
-        eta = 1 / popt[0]
-        print(f"eta (uA/V): {eta}")
+        if t == temps[0]:
+            eta = 1 / popt[0]
+            print(f"eta (uA/V): {eta}")
 
 
         I_tes = eta * V_out
@@ -72,8 +72,8 @@ def main():
         R_tes = V_tes[1:] / I_tes[1:]
         R_tes =  np.append(0.0,R_tes)
 
-        
-        np.savetxt(f"rawdata/IV_{t}.txt",[I_bias,V_out])
+        np.savetxt(f"rawdata/IV_{t}.txt",[I_bias,V_out,R_tes])
+        np.savetxt(f"calibration/IV_{t}.txt",[I_bias,V_out,R_tes])
 
         # I-V graugh
         plt.plot(I_bias,V_out,marker = "o",c = "red",linewidth = 1,markersize = 6)
@@ -81,7 +81,7 @@ def main():
         plt.xlabel("I_bias[uA]")
         plt.ylabel("V_out[V]")
         plt.grid(True)
-        plt.savefig(f"output/IV_{t}.png")
+        plt.savefig(f"rawdata/IV_{t}.png")
         #plt.show()
         plt.cla()
         
@@ -91,7 +91,7 @@ def main():
         plt.xlabel("I_bias[uA]",fontsize = 16)
         plt.ylabel("R_tes[$\Omega$]",fontsize = 16)
         plt.grid(True)
-        plt.savefig(f"output/IR_{t}.png")
+        plt.savefig(f"rawdata/IR_{t}.png")
         plt.cla()
 
     for t in temps:
@@ -114,7 +114,7 @@ def main():
     plt.ylabel("V_out[V]")
     plt.grid(True)
     plt.legend()
-    plt.savefig(f"output/IV_matome.png")
+    plt.savefig(f"rawdata/IV_matome.png")
     plt.show()
     
         
