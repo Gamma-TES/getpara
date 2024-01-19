@@ -220,6 +220,9 @@ def decaytime(data, peak, peak_index, decay_high,decay_low,rate):
 def area(data, peak_index, x, w):
 	return np.sum(data[peak_index - x : peak_index - x + w])
 
+def arrival_time(data,threshold):
+	return np.argmax(data >= threshold)
+
 
 # LP Filter
 def BesselFilter(x, rate, fs):
