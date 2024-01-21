@@ -9,6 +9,7 @@ import glob
 from natsort import natsorted
 import os
 import sys
+import matplotlib.cm as cm
 
 
 
@@ -93,7 +94,7 @@ def main():
         plt.grid(True)
         plt.savefig(f"rawdata/IR_{t}.png")
         plt.cla()
-
+    cnt=0
     for t in temps:
         files = natsorted(glob.glob(os.path.join(t,"*.dat")))
         I_bias = [] 
@@ -107,7 +108,8 @@ def main():
         V_out = np.array(V_out)
         I_bias = np.array(I_bias)
         V_out = offset(V_out)
-        plt.plot(I_bias,V_out,marker = "o",linewidth = 1,markersize = 6,label=t)
+        plt.plot(I_bias,V_out,marker = "o",linewidth = 1,markersize = 6,label=t,color=cm.hsv((float(cnt)) / float(len(temps))))
+        cnt+=1
 
     plt.title('I-V')
     plt.xlabel("I_bias[uA]")

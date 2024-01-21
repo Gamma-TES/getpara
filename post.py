@@ -25,6 +25,10 @@ def df_number(df):
 
 
 def main():
+
+	root  = tk.Tk()
+	root.withdraw()
+
 	ch0 = 0
 	ch1 = 1
 	para = sys.argv[1]
@@ -63,7 +67,8 @@ def main():
 	plt.title(para)
 	plt.grid()
 	plt.savefig(f"{output_0}/pulse_height_CH{ch0}_CH{ch1}.png")
-	plt.show()
+	#plt.show()
+	plt.cla()
 
 	# ----- choose creating selected output or no ---------------------------
 	output_select = input("output: ")
@@ -93,10 +98,10 @@ def main():
 	plt.ylabel(f"channel {ch1} [V]")
 	plt.grid()
 	plt.savefig(f"{output_select}/pulse_height_{ch0}_{ch1}selected.png")
-	plt.show()
+	#plt.show()
 	plt.cla()
 
-	a = input("image write?[0]")
+	a = '0'#input("create averagepulse?[0]")
 	
 	if a != '0':
 		print("exit")
@@ -135,16 +140,15 @@ def main():
 
 		# ----- delete noise data ---------------------------------------------
 
-		if platform.system() != "Darwin":
-			try:
-				print(output_select)
-				root = tk.Tk()
-				fle = filedialog.askopenfilenames(initialdir=f"{output_select}/img")
-				root.withdraw()
-			except:
-				fle = []
-		else:
+		
+		try:
+			print(output_select)
+			root = tk.Tk()
+			fle = filedialog.askopenfilenames(initialdir=f"{output_select}/CH{ch}/img")
+			root.withdraw()
+		except:
 			fle = []
+		
 
 		for f in fle:
 			num = int(re.findall(r"\d+", os.path.basename(f))[0])

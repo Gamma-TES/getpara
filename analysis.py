@@ -17,8 +17,18 @@ import plt_config
 import natsort
 import glob
 import matplotlib.cm as cm
+from scipy.optimize import curve_fit
 
 arrival_threshold = 0.01
+
+def arrival_time(data,point,x,w):
+	fit_data = data[point-x:point-x+w]
+	fit_range = np.arange(point-x,point-x+w,1)
+	
+	popt,ccpov = curve_fit(gp.multi_func,fit_range,fit_data,p0=[0,0])
+
+	#arrival = -popt[1]/popt[0]
+	return popt#arrival
 
 def main():
 	setting = gp.loadJson()
@@ -27,7 +37,9 @@ def main():
 	output = config['output']
 	ch = config['channel']
 	para = setting['main']
-	time = gp.data_time(rate=config['rate'],samples=config['samples'])*1e3
+	time = gp.data_time(rate=config['rate'],samples=config['samples'])
+	presamples = int(config['presamples'])
+	rate = config['rate']
 	os.chdir(path)
 
 	'''
@@ -44,7 +56,7 @@ def main():
 	blocks_path_0 = natsort.natsorted(glob.glob(f'CH0_pulse/output/{output}/blocks/average_pulse_*.txt'))
 	blocks_path_1 = natsort.natsorted(glob.glob(f'CH1_pulse/output/{output}/blocks/average_pulse_*.txt'))
 
-	block = np.arange(1,12,1)
+	block = np.arange(1,len(blocks_path_0)+1,1)
 	
 	k = 1
 	arrival_diffs = []
@@ -54,29 +66,55 @@ def main():
 		ch_1 = np.loadtxt(j)
 		height_0 = gp.peak(ch_0,config["presamples"],para['peak_max'],para['peak_x'],para['peak_w'])
 		height_1 = gp.peak(ch_1,config["presamples"],para['peak_max'],para['peak_x'],para['peak_w'])
+		ch_1 = ch_1 #*1.6967260839791022
 
-		ch_1 = ch_1 * 1.6345
+		ratio = height_0[1]/height_1[1]
 		
-		arrival_0 = gp.arrival_time(ch_0[6000:],arrival_threshold)+6000
-		arrival_1 = gp.arrival_time(ch_1[6000:],arrival_threshold)+6000
+		
+		
+		print(f'block: {k}')
+		print(f"height ratio (ch0/ch1): {ratio}")
+		#print(arrival_diff/config['rate'])
+		
+
+		diff_0 = np.argmax(gp.diff(ch_0[presamples:])) + presamples
+		diff_1 = np.argmax(gp.diff(ch_1[presamples:])) + presamples
+
+		x_fit = np.arange(presamples-10,presamples+30,1)
+		popt_0 = arrival_time(ch_0,diff_0,2,5)
+		popt_1 = arrival_time(ch_1,diff_1,2,5)
+		y_fit_0 = gp.multi_func(x_fit,*popt_0)
+		y_fit_1 = gp.multi_func(x_fit,*popt_1)
+		arrival_0 = -popt_0[0]/popt_0[1]/rate
+		arrival_1 = -popt_1[0]/popt_1[1]/rate
+
 		arrival_diff = (arrival_0 - arrival_1)
 		arrival_diffs.append(arrival_diff/config['rate'])
-		print(k)
-		print(height_0[1]/height_1[1])
-		print(arrival_diff/config['rate'])
-		ratio = height_0[1]/height_1[1]
-		plt.plot(time,ch_0,label = 'CH0')
-		plt.plot(time,ch_1,label = 'CH1')
-		plt.scatter(time[arrival_0],ch_0[arrival_0])
-		plt.scatter(time[arrival_1],ch_1[arrival_1])
+
+		
+
+		plt.plot(time*1e3,ch_0,markersize = 2.0,label = 'CH0')
+		plt.plot(time*1e3,ch_1,markersize = 1.0,label = 'CH1')
+		
+		
+		plt.scatter(time[diff_0-2:diff_0-2+5]*1e3,ch_0[diff_0-2:diff_0-2+5],c = 'tab:green',label='fitting sample')
+		plt.scatter(time[diff_0]*1e3,ch_0[diff_0],c='black',label = 'diff max')
+		plt.scatter(arrival_0*1e3,0,c='red',label='arrival time')
+		plt.plot(x_fit/rate*1e3,y_fit_0,'--',label = 'fitting')
+
+		plt.scatter(time[diff_1-2:diff_1-2+5]*1e3,ch_1[diff_1-2:diff_1-2+5],c = 'tab:green',label='fitting sample')
+		plt.scatter(time[diff_1]*1e3,ch_1[diff_1],c='black',label = 'diff max')
+		plt.scatter(arrival_1*1e3,0,c='red',label='arrival time')
+		plt.plot(x_fit/rate*1e3,y_fit_1,'--',label = 'fitting')
+		
 		plt.title(f"block{k}")
 		plt.xlabel("time [ms]")
 		plt.ylabel("volt [V]")
 		gp.graugh_condition(setting["graugh"])
 		plt.grid()
-		plt.legend(fontsize=12)
+		#plt.legend(fontsize=12)
 		plt.tight_layout()
-		plt.savefig(f'CH0_pulse/output/{output}/blocks/block{k}.png')
+		plt.savefig(f'CH0_pulse/output/{output}/blocks/block{k}.pdf')
 		plt.show()
 		plt.cla()
 		k+=1
@@ -92,7 +130,7 @@ def main():
 	plt.savefig(f'CH0_pulse/output/{output}/blocks/arrival_time.png')
 	plt.show()
 	
-
+	
 
 	b = 0
 	for i,j in zip(blocks_path_0,blocks_path_1):

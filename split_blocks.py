@@ -10,9 +10,7 @@ import plt_config
 import sys
 
 # parameter 
-n_blocks = 11
-a_ini = 1.5 	# y = ax + 1
-resolution = 0.000001	# a decrement
+
 
 
 # liner function
@@ -30,6 +28,8 @@ def main():
 
 
 	setting = gp.loadJson()
+	a_ini = 1.6 	# y = ax + 1
+	resolution = 0.00001	# a decrement
 	
 	config = setting["Config"]
 	select = setting["select"]
@@ -63,35 +63,56 @@ def main():
 	print(f"length: {len(df_0_lap)}")
 	print(f"1-block: {block}")
 
-	a = a_ini
-	a_array = np.arange(a,0.0,resolution*-1)
+	a_array = np.arange(a_ini,0.0,resolution*-1)
 	x_line = np.arange(0,df_0_lap[para].max()*1.1,0.001)
 
-	y_line_down = func(x_line,a)
+	y_line_down = func(x_line,a_ini)
 	plt.scatter(df_0_lap[para],df_1_lap[para],s=2)
 	plt.plot(x_line,y_line_down,"--",linewidth=0.5,markersize=0.7,color="black",alpha=0.7)
 	plt.show()
 	plt.cla()
-	plt.plot(x_line,y_line_down,"--",linewidth=0.5,markersize=0.7,color="black",alpha=0.7)
+	#plt.plot(x_line,y_line_down,"--",linewidth=0.5,markersize=0.7,color="black",alpha=0.7)
 
-
-	n = n_blocks
-
-	# decrease a per resolution and sepalate blocks
-	for i in tqdm.tqdm(a_array):
+	# ---check first data -------
+	print("check first data .......")
+	for i in a_array:
 		d_up = df_1_lap[para].values - func(df_0_lap[para],i).values 
-		d_down = df_1_lap[para].values - func(df_0_lap[para],a).values 
+		d_down = df_1_lap[para].values - func(df_0_lap[para],a_ini).values 
 		
 		idx_up = (d_up > 0).nonzero()[0]
 		idx_down = (d_down < 0).nonzero()[0]
 
 		span = list(set(idx_up) & set(idx_down))
 		indexs = df_0_lap.iloc[span].index
+		if len(indexs)==1:
+			y_line_down = func(x_line,i)
+			plt.plot(x_line,y_line_down,"--",linewidth=0.5,markersize=0.7,color="black",alpha=0.7)
+			a_ini = i+resolution
+			break
+
+	n = n_block + 1
+
+	a_array = np.arange(a_ini,0.0,resolution*-1)
+
+	# decrease a per resolution and sepalate blocks
+	for i in tqdm.tqdm(a_array):
+		d_up = df_1_lap[para].values - func(df_0_lap[para],i).values 
+		d_down = df_1_lap[para].values - func(df_0_lap[para],a_ini).values 
+		
+		idx_up = (d_up >= 0).nonzero()[0]
+		idx_down = (d_down <= 0).nonzero()[0]
+
+		span = list(set(idx_up) & set(idx_down))
+		indexs = df_0_lap.iloc[span].index
+	
 		if len(indexs)>=block:
-			a = i - resolution
+			if len(indexs)!=block:
+				print('resolution recquired!!!')
+				exit()
+			a_ini = i - resolution
 			n -= 1
 
-			y_line_down = func(x_line,a)
+			y_line_down = func(x_line,a_ini)
 			np.savetxt(f"CH{ch}_pulse/output/{config['output']}/blocks/block_{n}.txt",indexs)
 
 			df_sel_0,df_sel_1 = df_0_lap.loc[indexs],df_1_lap.loc[indexs]
@@ -105,12 +126,16 @@ def main():
 				'''
 
 			plt.plot(x_line,y_line_down,"--",linewidth=0.5,markersize=0.7,color="black",alpha=0.7)
-			
 
 			df_0_lap.drop(indexs, inplace = True)
 			df_1_lap.drop(indexs, inplace = True)
-		
-		if n == 0:
+			#plt.show()
+
+			x,y = df_0_lap[para],df_1_lap[para]
+			#plt.scatter(x,y,s=2,color = cm.hsv((float(n))/float(n_block)))
+			#plt.show()
+
+		if n == 1:
 			break
 
 	plt.grid()
@@ -119,8 +144,9 @@ def main():
 	plt.tight_layout()
 	plt.savefig(f"CH{ch}_pulse/output/{config['output']}/blocks/blocks.png")
 	plt.show()
-	
 	plt.cla()
+
+	
 
 if __name__ == "__main__":
 	main()

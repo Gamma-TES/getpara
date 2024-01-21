@@ -224,6 +224,14 @@ def arrival_time(data,threshold):
 	return np.argmax(data >= threshold)
 
 
+def arrival_time_2(data,point,x,w):
+	fit_data = data[point-x:point-x+w]
+	fit_range = np.linspace(point-x,point-x+w,w)
+	popt,ccpov = curve_fit(multi_func,fit_range,fit_data,p0=[0,0])
+	arrival = -popt[1]/popt[0]
+	return arrival
+	
+
 # LP Filter
 def BesselFilter(x, rate, fs):
 	# fn = rate/2
