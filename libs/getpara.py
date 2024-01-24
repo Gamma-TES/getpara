@@ -220,9 +220,16 @@ def decaytime(data, peak, peak_index, decay_high,decay_low,rate):
 def area(data, peak_index, x, w):
 	return np.sum(data[peak_index - x : peak_index - x + w])
 
-def arrival_time(data,threshold):
+def arrival_time_threshold(data,threshold):
 	return np.argmax(data >= threshold)
 
+def arrival_time(data,presamples,x,w):
+	diff = np.argmax(gp.diff(data[presamples:])) + presamples
+	fit_data = data[diff-x:diff-x+w]
+	fit_range = np.arange(diff-x,diff-x+w,1)
+	popt,ccpov = curve_fit(gp.multi_func,fit_range,fit_data,p0=[0,0])
+	arrival = -popt[0]/popt[1]
+	return arrival
 
 def arrival_time_2(data,point,x,w):
 	fit_data = data[point-x:point-x+w]
