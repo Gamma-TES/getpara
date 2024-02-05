@@ -13,6 +13,8 @@ import re
 import json
 import warnings
 import math
+from natsort import natsorted
+import glob
 import plt_config
 
 test_data = "E:/matsumi/data/20230512/room2-2_140mK_870uA_gain10_trig0.4_500kHz/CH0_pulse/rawdata/CH0_4833.dat"
@@ -112,6 +114,8 @@ def loadPHITS(path, start, end, column):
 			n += 1
 	return electron
 
+def globsort(path):
+	return natsorted(glob.glob(path))
 
 # ---------------------------------------------------------------------
 
@@ -122,25 +126,25 @@ def select_condition(df, select):
 		selectdata = loadIndex(select["index"])
 		df = df[df.index.isin(selectdata)]
 
-	else:
-		for i in select:
-			try:
-				param, sym = i.split("-")
-				if i == "index->":
-					df = df.iloc[select[i] :]
-				elif i == "index-<":
-					df = df.iloc[: select[i]]
-				else:
-					if sym == ">":
-						df = df[df[param] > select[i]]
-					elif sym == "<":
-						df = df[df[param] < select[i]]
-					elif sym == "=":
-						df = df[df[param] == select[i]]
-					elif sym == "!":
-						df = df[df[param] != select[i]]
-			except Exception as e:
-				continue
+	
+	for i in select:
+		try:
+			param, sym = i.split("-")
+			if i == "index->":
+				df = df.iloc[select[i] :]
+			elif i == "index-<":
+				df = df.iloc[: select[i]]
+			else:
+				if sym == ">":
+					df = df[df[param] > select[i]]
+				elif sym == "<":
+					df = df[df[param] < select[i]]
+				elif sym == "=":
+					df = df[df[param] == select[i]]
+				elif sym == "!":
+					df = df[df[param] != select[i]]
+		except Exception as e:
+			continue
 	return df
 
 
@@ -440,16 +444,24 @@ def search_peak(hist):
 
 # ----------グラフからデータを抽出---------------------------------
 def pickSamples(df, x, y):
-	coo = ginput(x, y)
+	coo = ginput(df[x], df[y])
 
-	x_picked = []
-	y_picked = []
-	inside = np.ndarray(len(x), dtype=bool)
+	inside = np.ndarray(len(df[x]), dtype=bool)
 	inside[:] = False
-	for i, (sx, sy) in enumerate(zip(x, y)):
+	for i, (sx, sy) in enumerate(zip(df[x], df[y])):
 		inside[i] = inpolygon(sx, sy, coo[:, 0], coo[:, 1])
 	# PlotSelected(x,y,inside,x_picked,y_picked)
 	return df[inside].index.values.tolist()
+
+def pickSamples_PoST(df_1,df_2, para):
+	coo = ginput(df_1[para], df_2[para])
+
+	inside = np.ndarray(len(df_1[para]), dtype=bool)
+	inside[:] = False
+	for i, (sx, sy) in enumerate(zip(df_1[para], df_2[para])):
+		inside[i] = inpolygon(sx, sy, coo[:, 0], coo[:, 1])
+	# PlotSelected(x,y,inside,x_picked,y_picked)
+	return df_1[inside].index.values.tolist()
 
 
 def extruct(df, *x):

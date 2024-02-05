@@ -94,7 +94,7 @@ def main():
 		print(f'\nA: {a}\nmu: {mu}\nsigma: {sigma}')
 		print(f'\nFWHW: {fwhw}\nEnergy resoltion: {dE} keV')
 
-		plt.hist(pulseheight, bins =bins)
+		plt.hist(pulseheight, bins =bins,alpha=0.8)
 		plt.plot(x_fit, y_fit, color='red',linewidth=1,linestyle='-')
 
 		#plt.title(f'dE = {dE:.3f}keV @{int(energy)} keV')
@@ -103,6 +103,7 @@ def main():
 		plt.tick_params(axis='both', which='both', direction='in',\
 						bottom=True, top=True, left=True, right=True)
 		plt.grid(True, which='major', color='black', linestyle='-', linewidth=0.2)
+		plt.tight_layout()
 		plt.savefig(f'{output}/{set["select"]["output"]}/E_{int(energy)}keV.png')
 		plt.show()
 

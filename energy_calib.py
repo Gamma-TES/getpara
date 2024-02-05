@@ -40,8 +40,8 @@ def main():
 	with open(f'{output}/{set["select"]["output"]}/gfit.json') as f:
 			fit_para = json.load(f)
 	
-	height = [0.0]
-	energy = [0.0]
+	height = []#[0.0]
+	energy = [] #[0.0]
 	for i in fit_para:
 		energy.append(float(i))
 		height.append(fit_para[i]["mu"])

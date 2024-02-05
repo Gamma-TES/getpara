@@ -35,8 +35,8 @@ ax_unit = {
 	"peak_index":'peak index',
 	"height_opt":'pulse height opt',
 	"height_opt_temp":'pulse height opt temp',
-	'rise':'rise[s]',
-	'decay':'decay[s]',
+	'rise':'rise [ms]',
+	'decay':'decay [ms]',
 	'area':'area',
 	'rise_fit':'rise_fit[s]',
 	'tau_rise':'tau_rise[s]',
@@ -93,7 +93,7 @@ def main():
 	# ax vs ax
 	elif len(ax) == 2:
 		x,y = gp.extruct(df_clear,*ax)
-		plt.scatter(x,y,s=2,alpha=0.7)
+		plt.scatter(x*1e3,y,s=2,alpha=0.7)
 		plt.xlabel(ax_unit[ax[0]])
 		plt.ylabel(ax_unit[ax[1]])
 		plt.title(f"{ax[0]} vs {ax[1]}")
@@ -123,7 +123,7 @@ def main():
 
 		# pick samples from graugh
 		x,y = gp.extruct(df_clear,*ax)
-		picked = gp.pickSamples(df_clear,x,y)
+		picked = gp.pickSamples(df_clear,*ax)
 		print(f"Selected {len((picked))} samples.")
 		np.savetxt(f"{output_select}/selected_index.txt", picked, fmt="%s")
 

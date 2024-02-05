@@ -67,7 +67,7 @@ def main():
 	plt.title(para)
 	plt.grid()
 	plt.savefig(f"{output_0}/pulse_height_CH{ch0}_CH{ch1}.png")
-	#plt.show()
+	plt.show()
 	plt.cla()
 
 	# ----- choose creating selected output or no ---------------------------
@@ -85,7 +85,7 @@ def main():
 
 	# pick samples from graugh
 
-	picked = gp.pickSamples(df_0_over, x, y)
+	picked = gp.pickSamples_PoST(df_0_over,df_1_over,para)
 	print(f"Selected {len((picked))} samples.")
 
 	# graugh picked samples

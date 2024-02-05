@@ -28,7 +28,7 @@ def main():
 
 
 	setting = gp.loadJson()
-	a_ini = 1.6 	# y = ax + 1
+	a_ini = 1.4 	# y = ax + 1
 	resolution = 0.00001	# a decrement
 	
 	config = setting["Config"]
@@ -84,9 +84,10 @@ def main():
 
 		span = list(set(idx_up) & set(idx_down))
 		indexs = df_0_lap.iloc[span].index
+		
 		if len(indexs)==1:
 			y_line_down = func(x_line,i)
-			plt.plot(x_line,y_line_down,"--",linewidth=0.5,markersize=0.7,color="black",alpha=0.7)
+			#plt.plot(x_line,y_line_down,"--",linewidth=0.5,markersize=0.7,color="black",alpha=0.7)
 			a_ini = i+resolution
 			break
 
@@ -117,15 +118,17 @@ def main():
 
 			df_sel_0,df_sel_1 = df_0_lap.loc[indexs],df_1_lap.loc[indexs]
 			x,y = df_sel_0[para],df_sel_1[para]
-			plt.scatter(x,y,s=2,color = cm.hsv((float(n))/float(n_block)))
-			'''
-			if n==1:
+			#plt.scatter(x,y,s=2,color = cm.hsv((float(n))/float(n_block)))
+
+			if n==n_block:
 				plt.scatter(x,y,s=2,color = "tab:red")
+			elif n==2:
+				plt.scatter(x,y,s=2,color = "tab:blue")
 			else:
 				plt.scatter(x,y,s=2,color = "0.5")
-				'''
+				
 
-			plt.plot(x_line,y_line_down,"--",linewidth=0.5,markersize=0.7,color="black",alpha=0.7)
+			#plt.plot(x_line,y_line_down,"--",linewidth=0.5,markersize=0.7,color="black",alpha=0.7)
 
 			df_0_lap.drop(indexs, inplace = True)
 			df_1_lap.drop(indexs, inplace = True)
